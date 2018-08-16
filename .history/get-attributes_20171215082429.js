@@ -1,5 +1,5 @@
 /**
- * NodeJS CLI to second-chance/players/self/submissions.
+ * NodeJS CLI to players/self get attributes.
  * Demonstrates use of request-promise, accepting oauth token from stdin,
  *  making synchronous (async/await) a promised function
  * Pete Jansz Dec 2017
@@ -13,7 +13,7 @@ var util = require( 'util' ) // to support async/await(promised-func)
 
 program
     .version( '0.0.1' )
-    .description( 'NodeJS CLI to second-chance/players/self/submissions' )
+    .description( 'NodeJS CLI to players/self get attributes' )
     .usage( '-h <host> [-u username -p password]' )
     .option( '-h, --hostname <hostname>', 'Hostname' )
     .option( '-u, --username [username]', 'Username' )
@@ -51,7 +51,7 @@ main()
 // Return a promise or synchronusly write to responseStream
 function getAttributes( hostname, authToken, responseStream )
 {
-    var urlFormat = '/api/v1/second-chance/players/self/submissions'
+    var urlFormat = 'http://%s/api/v1/players/self/attributes'
     var url = util.format( urlFormat, hostname )
     var options =
         {

@@ -1,0 +1,16 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch cacatesalotsvc1-b2b.js", "args": [
+              "--proto-host",   "https://sit-draw-mobile.calottery.com"
+            ],
+            "program": "${workspaceFolder}/cacatesalotsvc1-b2b.js"
+        }
+    ]
+}
