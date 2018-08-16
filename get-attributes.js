@@ -5,9 +5,10 @@
  * Pete Jansz Dec 2017
  */
 
-var request = require( process.env.USERPROFILE + '/AppData/Roaming/npm/node_modules/request-promise' )
-var program = require( process.env.USERPROFILE + '/AppData/Roaming/npm/node_modules/commander' )
-var lib1 = require( process.env.USERPROFILE + "/Documents/bin/lib1.js" )
+const modulesPath = '/usr/share/node_modules/'
+var request = require( modulesPath + 'request-promise' )
+var program = require( modulesPath + 'commander' )
+var lib1 = require( modulesPath + 'pete-lib/pete-util' )
 const fs = require( 'fs' )
 var util = require( 'util' ) // to support async/await(promised-func)
 
