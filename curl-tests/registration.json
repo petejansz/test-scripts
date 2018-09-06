@@ -1,0 +1,63 @@
+{
+  "password" : "Password123",
+  "personalInfo" : {
+    "firstName" : "TEST",
+    "middleName" : "A",
+    "lastName" : "LASTNAME",
+    "gender" : "MALE",
+    "addresses" : {
+      "MAILING" : {
+        "type" : "MAILING",
+        "postalCode" : "90057",
+        "city" : "SACRAMENTO",
+        "isoCountryCode" : "US",
+        "state" : "CA",
+        "country" : "US",
+        "address1" : "123 Elm St",
+        "address2" : "",
+        "verifyLevel" : 7
+      }
+    },
+    "phones" : {
+      "HOME" : {
+        "type" : "HOME",
+        "number" : "2000000001",
+        "provider" : "Regular"
+      }
+    },
+    "emails" : {
+      "PERSONAL" : {
+        "type" : "PERSONAL",
+        "address" : "testd@yopmail.com",
+        "verified" : false,
+        "certaintyLevel" : 200
+      }
+    },
+    "citizenship" : "Resident",
+    "suffix": "JR",
+    "dateOfBirth" : 0,
+    "errorCode" : "ERR",
+    "addressResultCode" : "",
+    "dateOfBirthMatchCode" : "",
+    "userIdVerified" : "4",
+    "ssnresultCode" : "",
+    "ofacvalidationResultCode" : 1,
+    "telephoneVerificationResultCode" : ""
+  },
+  "nonpublicPersonalInfo" : {
+    "dateOfBirth" : 483017580000
+  },
+  "caProfile" : {
+    "acceptedTermsAndConditionsDate": 1479920506894,
+    "acceptsEmail": false,
+    "acceptsPromotionalEmail": false,
+    "acceptsRewards": false,
+    "acceptTermsAndConditions": true,
+    "language": "EN",
+    "registrationDate": 1479920506900,
+    "registrationLevel": 1,
+    "termsAndConditionsId": "1479920506901",
+    "userName": "testd@yopmail.com",
+    "jackpotCaptain": false
+  }
+}
