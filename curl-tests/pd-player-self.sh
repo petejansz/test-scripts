@@ -17,7 +17,7 @@ SITE_ID=$CA_SITE_ID
 QUIET=false
 HELP=false
 
-help()
+function help()
 {
   echo "USAGE: $(basename $0) [options] -h <hostname> -u <username> -p <password>" >&2
   echo "  options"                                                                 >&2
@@ -56,39 +56,62 @@ if [[ "$HELP" == 'true' || -z "$HOST" || -z "$USERNAME" || -z "$PASSWORD" ]]; th
 fi
 
 HOSTNAME=$HOST
+PROTO='http'
+if [[ "$HOSTNAME" =~ '.com' ]]; then
+    PROTO="https"
+fi
 
-get()
+if [[ "$HOSTNAME" =~ "mobile" ]]; then
+    CHANNEL_ID=3
+fi
+
+function is_email_available() # input-params: EMAIL_NAME; output-value: 'true' | 'false'
 {
-    FUNCTION=$1
-
-    PROTO='http'
-    if [[ "$HOSTNAME" =~ '.com' ]]; then
-        PROTO="https"
-    fi
-
-    if [[ "$HOSTNAME" =~ "mobile" ]]; then
-        CHANNEL_ID=3
-    fi
-
-    curl -sX GET "${PROTO}://$HOSTNAME/api/v1/players/self/${FUNCTION}" \
+    local EMAIL_NAME=$1
+    local AVAILABLE=$(curl -sX GET "${PROTO}://$HOSTNAME/api/v1/players/available/${EMAIL_NAME}"  \
+      -H 'Cache-Control: no-cache'          \
       -H "x-ex-system-id: ${EX_SYS_ID}"     \
-      -H "X-CHANNEL-ID: ${CHANNEL_ID}"      \
+      -H "x-channel-id: ${CHANNEL_ID}")
+    echo $AVAILABLE
+}
+
+function get_players_self() # input-params: FUNCTION_NAME; output-value: JSON_CONTENT
+{
+    local FUNCTION_NAME=$1
+
+    curl -sX GET "${PROTO}://$HOSTNAME/api/v1/players/self/${FUNCTION_NAME}" \
+      -H "x-ex-system-id: ${EX_SYS_ID}"     \
+      -H "x-channel-id: ${CHANNEL_ID}"      \
       -H "x-site-id: ${SITE_ID}"            \
       -H "authorization: OAuth ${OAUTH}"    \
       -H 'cache-control: no-cache'          \
       -H "x-device-uuid: ${SCRIPT}"
 }
 
-OAUTH=$(node ~pjansz/Documents/bin/pd-login.js -h $HOSTNAME -u $USERNAME -p $PASSWORD)
+function pd_login() # input-params: $HOSTNAME $USERNAME $PASSWORD; output-value: $OAUTH_TOKEN
+{
+    local HOSTNAME=$1
+    local USERNAME=$2
+    local PASSWORD=$3
+    local OAUTH_TOKEN=$(node ~pjansz/Documents/bin/pd-login.js -h $HOSTNAME -u $USERNAME -p $PASSWORD)
+    echo "${OAUTH_TOKEN}"
+}
 
-for fun in 'attributes' 'personal-info' 'profile' 'notifications-preferences' 'notifications' 'communication-preferences'; do
-    CONTENT=$(get $fun)
-    if [ $? != 0 ]; then
-        echo "Failed: $fun \n$CONTENT"
-        exit 1
-    fi
+function exec_players_self_apis()
+{
+    for fun in 'attributes' 'personal-info' 'profile' 'notifications-preferences' 'notifications' 'communication-preferences'; do
+        CONTENT=$(get_players_self $fun)
+        if [ $? != 0 ]; then
+            echo "Failed: $fun \n$CONTENT"
+            exit 1
+        fi
 
-    if [[ "$QUIET" =~ 'false'  ]]; then
-        echo "Passed: $fun"
-    fi
-done
+        if [[ "$QUIET" =~ 'false'  ]]; then
+            echo "Passed: $fun"
+        fi
+    done
+}
+
+echo "Is email available? $(is_email_available $USERNAME)"
+OAUTH=$(pd_login $HOSTNAME $USERNAME $PASSWORD)
+exec_players_self_apis
