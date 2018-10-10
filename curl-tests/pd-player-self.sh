@@ -78,8 +78,12 @@ function is_email_available() # input-params: EMAIL_NAME; output-value: 'true' |
 function get_players_self() # input-params: FUNCTION_NAME; output-value: JSON_CONTENT
 {
     local FUNCTION_NAME=$1
+    local CURL_OPTS=$2
+    if [[ -z "$CURL_OPTS" ]]; then
+      local CURL_OPTS='-o -I -L -s -w %{http_code}'
+    fi
 
-    curl -sX GET "${PROTO}://$HOSTNAME/api/v1/players/self/${FUNCTION_NAME}" \
+    curl $CURL_OPTS "${PROTO}://$HOSTNAME/api/v1/players/self/${FUNCTION_NAME}" \
       -H "x-ex-system-id: ${EX_SYS_ID}"     \
       -H "x-channel-id: ${CHANNEL_ID}"      \
       -H "x-site-id: ${SITE_ID}"            \
@@ -100,14 +104,15 @@ function pd_login() # input-params: $HOSTNAME $USERNAME $PASSWORD; output-value:
 function exec_players_self_apis()
 {
     for fun in 'attributes' 'personal-info' 'profile' 'notifications-preferences' 'notifications' 'communication-preferences'; do
-        CONTENT=$(get_players_self $fun)
-        if [ $? != 0 ]; then
-            echo "Failed: $fun \n$CONTENT"
+        RESPONSE_CODE=$(get_players_self $fun)
+
+        if [[ $RESPONSE_CODE != 200 ]]; then
+            echo "Failed: $fun : $RESPONSE_CODE"
             exit 1
         fi
 
         if [[ "$QUIET" =~ 'false'  ]]; then
-            echo "Passed: $fun"
+            echo "Response code ${RESPONSE_CODE}: $fun"
         fi
     done
 }
