@@ -1,11 +1,11 @@
 // Pete Jansz, Nov 2017
 
+const modulesPath = '/usr/share/node_modules/'
+var ibmdb = require( modulesPath + '/ibm_db' )
+var program = require( modulesPath + 'commander' )
+var peteUtil = require( modulesPath + 'pete-lib/pete-util' )
 var fs = require( 'fs' )
 var util = require( 'util' )
-var ibmdb = require( process.env.USERPROFILE + '/AppData/Roaming/npm/node_modules/ibm_db' )
-var program = require( process.env.USERPROFILE + '/AppData/Roaming/npm/node_modules/commander' )
-var lib1 = require( process.env.USERPROFILE + "/Documents/bin/lib1.js" )
-var path = require( 'path' )
 
 program
     .version( '0.0.1' )
@@ -99,7 +99,7 @@ function updateDbPlayers( dsn, playerIdList )
     ibmdb.open( dsn, function ( err, conn )
     {
         ibmdb.debug( true )
-        console.error( "DB connected (seconds): " + lib1.elapsedTime( startTime ) )
+        console.error( "DB connected (seconds): " + peteUtil.elapsedTime( startTime ) )
 
         var updateCustomerContactsStmt = conn.prepareSync( updateCustomerContacts )
         var updateCustomerServicesStmt = conn.prepareSync( updateCustomerServices )

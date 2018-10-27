@@ -2,13 +2,12 @@
 
 var http = require( "https" )
 var util = require( "util" )
-var lib1 = require( process.env.USERPROFILE + "/Documents/bin/lib1.js" )
+const modulesPath = '/usr/share/node_modules/'
+var peteUtil = require( modulesPath + 'pete-lib/pete-util' )
 
 const PATH = '/api/v2/draw-games/draws'
 var hostnames =
     [
-        'ca-cat-b2b.lotteryservices.com',
-        'mobile-cat.calottery.com',
         'cat-draw-mobile.calottery.com',
         'sit-draw-mobile.calottery.com'
     ]
@@ -32,11 +31,8 @@ function testIt( hostname, testNr )
             "hostname": hostname,
             "port": null,
             "path": PATH,
-            "headers": lib1.commonHeaders
+            "headers": peteUtil.commonHeaders
         }
-
-    options.headers.accept = 'application/json, text/javascript, */*; q=0.01'
-    options.headers['user-agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36'
 
     var req = http.request( options, function ( res )
     {
@@ -61,7 +57,7 @@ function testIt( hostname, testNr )
             if ( responseObj.statusCode != 200 )
             {
                 process.exitCode = 1
-                console.err( util.format( '%s: %s', testNr, hostname ) )
+                console.error( util.format( '%s: %s', testNr, hostname ) )
                 console.error( JSON.stringify( responseObj ) )
             }
         } )

@@ -8,7 +8,7 @@
 const modulesPath = '/usr/share/node_modules/'
 var request = require( modulesPath + 'request-promise' )
 var program = require( modulesPath + 'commander' )
-var lib1 = require( modulesPath + 'pete-lib/pete-util' )
+var peteUtil = require( modulesPath + 'pete-lib/pete-util' )
 const fs = require( 'fs' )
 var util = require( 'util' ) // to support async/await(promised-func)
 
@@ -32,7 +32,7 @@ var authToken = null
 
 if ( program.username && program.password )
 {
-    authToken = lib1.getOAuthToken( program.hostname, program.username, program.password )
+    authToken = peteUtil.getOAuthToken( program.hostname, program.username, program.password )
 }
 else
 {
@@ -58,7 +58,7 @@ function getAttributes( hostname, authToken, responseStream )
         {
             method: 'GET',
             url: url,
-            headers: lib1.commonHeaders
+            headers: peteUtil.commonHeaders
         }
     options.headers.authorization = "OAuth " + authToken
 

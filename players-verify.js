@@ -1,7 +1,8 @@
 var fs = require( "fs" );
 var http = require( "http" );
-var program = require( process.env.USERPROFILE + '/AppData/Roaming/npm/node_modules/commander' );
-var lib1 = require( process.env.USERPROFILE + "/Documents/bin/lib1.js" );
+const modulesPath = '/usr/share/node_modules/'
+var program = require( modulesPath + 'commander' )
+var peteUtil = require( modulesPath + 'pete-lib/pete-util' )
 
 program
     .version( '0.0.1' )

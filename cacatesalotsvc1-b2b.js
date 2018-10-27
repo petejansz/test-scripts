@@ -1,13 +1,11 @@
 /**
  * Get draw-games
  */
-var path = require( 'path' )
+const modulesPath = '/usr/share/node_modules/'
+var request = require( modulesPath + 'request' )
+var program = require( modulesPath + 'commander' )
+var lib1 = require( modulesPath + 'pete-lib/pete-util' )
 var util = require( 'util' )
-var request = require( process.env.USERPROFILE + '/AppData/Roaming/npm/node_modules/request' )
-var program = require( process.env.USERPROFILE + '/AppData/Roaming/npm/node_modules/commander' )
-var str_to_stream = require( process.env.USERPROFILE + '/AppData/Roaming/npm/node_modules/string-to-stream' )
-var stream_to_str = require( process.env.USERPROFILE + '/AppData/Roaming/npm/node_modules/stream-to-string' )
-var lib1 = require( process.env.USERPROFILE + '/Documents/bin/lib1.js' )
 
 program
     .version( '0.0.1' )
