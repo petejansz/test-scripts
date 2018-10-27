@@ -10,6 +10,7 @@ CHANNEL_ID=2
 # CA
 CA_SITE_ID=35
 
+let COUNT=1
 HOST=
 PASSWORD=''
 USERNAME=''
@@ -22,6 +23,7 @@ function help()
   echo "USAGE: $(basename $0) [options] -h <hostname> -u <username> -p <password>" >&2
   echo "  options"                                                                 >&2
   echo "  -h | --host <host>"                                                      >&2
+  echo "  -c | --count <number>     "                                              >&2
   echo "  -u | --username <username>"                                              >&2
   echo "  -p | --password <password>"                                              >&2
   echo "       --siteid   <siteid (default=${CA_SITE_ID})>"                        >&2
@@ -30,7 +32,7 @@ function help()
 }
 
 # options parser:
-OPTS=$(getopt -o h:u:p:q --long host:,username:,password:,help,siteid:,quiet -n 'parse-options' -- "$@")
+OPTS=$(getopt -o c:h:u:p:q --long count:,host:,username:,password:,help,siteid:,quiet -n 'parse-options' -- "$@")
 if [ $? != 0 ]; then
   help
   exit 1
@@ -40,6 +42,7 @@ eval set -- "$OPTS"
 while true; do
   case "$1" in
       -h | --host     ) HOST="$2";     shift; shift ;;
+      -c | --count    ) COUNT="$2";    shift; shift ;;
       -p | --password ) PASSWORD="$2"; shift; shift ;;
       -u | --username ) USERNAME="$2"; shift; shift ;;
            --siteid   ) SITE_ID="$2";  shift; shift ;;
@@ -103,7 +106,7 @@ function pd_login() # input-params: $HOSTNAME $USERNAME $PASSWORD; output-value:
 
 function exec_players_self_apis()
 {
-    for fun in 'attributes' 'personal-info' 'profile' 'notifications-preferences' 'notifications' 'communication-preferences'; do
+    for fun in 'attributes' 'personal-info' 'profile' 'notifications-preferences' 'communication-preferences'; do
         RESPONSE_CODE=$(get_players_self $fun)
 
         if [[ $RESPONSE_CODE != 200 ]]; then
@@ -119,4 +122,7 @@ function exec_players_self_apis()
 
 echo "Is email available? $(is_email_available $USERNAME)"
 OAUTH=$(pd_login $HOSTNAME $USERNAME $PASSWORD)
-exec_players_self_apis
+while [[ $COUNT -ne 0 ]]; do
+  exec_players_self_apis
+  let COUNT--
+done
