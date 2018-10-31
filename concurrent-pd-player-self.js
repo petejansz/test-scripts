@@ -12,6 +12,7 @@ program
     .usage( '-h <host> -u <username> -p <password>' )
     .option( '-h, --hostname <hostname>', 'Hostname' )
     .option( '-t, --token <token>', 'OAuth token' )
+    .option( '-q, --quiet', 'Shhhh' )
     .parse( process.argv )
 
 process.exitCode = 1
@@ -67,15 +68,28 @@ function getPersonalInfo()
 
 var output = {}
 
-axios.all( [getAttributes(), getCommunicationPreferences(), getNotifications(), getNotificationPreferences(), getProfile(), getPersonalInfo()] )
+axios.all
+    (
+    [getAttributes(),
+    getCommunicationPreferences(),
+    getNotifications(),
+    getNotificationPreferences(),
+    getProfile(),
+    getPersonalInfo()]
+    )
     .then( axios.spread( function ( attribs, communicationPreferences, notifications, notifPreferences, profile, persInfo )
     {
         output.attributes = attribs.data
-        // output.communicationPreferences = communicationPreferences.data
-        // output.notifications = notifications.data
-        // output.notifPreferences = notifPreferences.data
-        // output.profile = profile.data
-        // output.personalInfo = persInfo.data
+        output.communicationPreferences = communicationPreferences.data
+        output.notifications = notifications.data
+        output.notifPreferences = notifPreferences.data
+        output.profile = profile.data
+        output.personalInfo = persInfo.data
+        process.exitCode = 0
 
-        console.log( JSON.stringify( output ) )
-    } ) )
+        if ( !program.quiet ) { console.log( JSON.stringify( output ) ) }
+    } )
+    ).catch( function ( error )
+    {
+        console.error( error )
+    } )
