@@ -2,7 +2,7 @@ HOST=$1
 USERNAME=$2
 PASSWORD=$3
 
-curl -X POST \
+curl -sX POST \
   "https://$HOST/api/v1/oauth/login" \
   -H 'cache-control: no-cache' \
   -H 'content-type: application/json' \

@@ -83,7 +83,7 @@ function get_players_self() # input-params: FUNCTION_NAME; output-value: JSON_CO
     local FUNCTION_NAME=$1
     local CURL_OPTS=$2
     if [[ -z "$CURL_OPTS" ]]; then
-      local CURL_OPTS='-o -I -L -s -w %{http_code}'
+      local CURL_OPTS="-o -I -L -s -w %{http_code}"
     fi
 
     curl $CURL_OPTS "${PROTO}://$HOSTNAME/api/v1/players/self/${FUNCTION_NAME}" \
@@ -100,7 +100,7 @@ function pd_login() # input-params: $HOSTNAME $USERNAME $PASSWORD; output-value:
     local HOSTNAME=$1
     local USERNAME=$2
     local PASSWORD=$3
-    local OAUTH_TOKEN=$(node ~pjansz/Documents/bin/pd-login.js -h $HOSTNAME -u $USERNAME -p $PASSWORD)
+    local OAUTH_TOKEN=$(oauth-login.sh -h $HOSTNAME -u $USERNAME -p $PASSWORD)
     echo "${OAUTH_TOKEN}"
 }
 
@@ -120,7 +120,7 @@ function exec_players_self_apis()
     done
 }
 
-echo "Is email available? $(is_email_available $USERNAME)"
+#echo "Is email available? $(is_email_available $USERNAME)"
 OAUTH=$(pd_login $HOSTNAME $USERNAME $PASSWORD)
 while [[ $COUNT -ne 0 ]]; do
   exec_players_self_apis
