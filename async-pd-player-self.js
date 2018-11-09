@@ -10,8 +10,8 @@ var igtCas = require( modulesPath + 'pete-lib/igt-cas' )
 
 program
     .version( '0.0.1' )
-    .description( 'NodeJS CLI to login, call some PD APIs' )
-    .usage( '-h <host> -u <username> -p <password>' )
+    .description( 'Axios aysynchronous/concurrent REST calls to PD player/self APIs' )
+    .usage(  '-h <host> -u <username> -p <password>' )
     .option( '-c, --count [count]', 'Repeat count times' )
     .option( '-h, --hostname <hostname>', 'Hostname' )
     .option( '-u, --username [username]', 'Username' )
