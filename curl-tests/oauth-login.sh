@@ -1,4 +1,4 @@
-#!/usr/bin/sh
+#! /bin/sh
 
 #   OAuth login to CA Player Direct, write oauth-token to stdout
 #   Pete Jansz, 2018-11-10
@@ -75,7 +75,7 @@ fi
 
 RESOURCE_CREDS="\"resourceOwnerCredentials\": {\"USERNAME\":\"${USERNAME}\", \"PASSWORD\":\"${PASSWORD}\"}"
 
-AUTH_CODE=$(curl -sX POST \
+AUTH_CODE=$(curl -ksX POST \
   "${PROTO}://${HOSTNAME}/api/v1/oauth/login"       \
   -H 'cache-control: no-cache'                      \
   -H 'content-type: application/json'               \
@@ -87,7 +87,7 @@ AUTH_CODE=$(curl -sX POST \
   -d "{ \"siteId\":\"${siteId}\", \"clientId\":\"${clientId}\", ${RESOURCE_CREDS} }" \
   | cut -d: -f 6 | cut -d, -f 1 | sed 's/"//g')
 
-TOKENS_RESP=$(curl -sX POST \
+TOKENS_RESP=$(curl -ksX POST \
   "${PROTO}://${HOSTNAME}/api/v1/oauth/self/tokens" \
   -H 'cache-control: no-cache'                      \
   -H 'content-type: application/json'               \

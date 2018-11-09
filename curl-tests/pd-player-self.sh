@@ -1,4 +1,4 @@
-#!/usr/bin/sh
+#! /bin/sh
 
 #   Sh test CA Player Direct player/self API's
 #   Login, get oauth token, make GET calls:
@@ -83,7 +83,7 @@ function get_players_self() # input-params: FUNCTION_NAME; output-value: JSON_CO
     local FUNCTION_NAME=$1
     local CURL_OPTS=$2
     if [[ -z "$CURL_OPTS" ]]; then
-      local CURL_OPTS="-o -I -L -s -w %{http_code}"
+      local CURL_OPTS="-o -I -L -ks -w %{http_code}"
     fi
 
     curl $CURL_OPTS "${PROTO}://$HOSTNAME/api/v1/players/self/${FUNCTION_NAME}" \
