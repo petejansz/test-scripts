@@ -33,24 +33,16 @@ async function main()
 {
     try
     {
-        var reqData = igtCas.createLoginRequest( program.hostname )
-        reqData.siteId = igtCas.getSiteId()
-
+        var loginRequest = igtCas.createLoginRequest( program.hostname, program.username, program.password )
         axiosInstance = createAxiosInstance( program.hostname )
 
         // Login for the authCode:
-        reqData.resourceOwnerCredentials = { USERNAME: program.username, PASSWORD: program.password }
-        var promisedLoginAuthCodeResponse = await axiosInstance.post( '/api/v1/oauth/login', reqData )
-
-        var oauthTokenRequest =
-        {
-            authCode: promisedLoginAuthCodeResponse.data[0].authCode,
-            clientId: reqData.clientId,
-            siteId: reqData.siteId
-        }
+        var promisedLoginAuthCodeResponse = await axiosInstance.post( '/api/v1/oauth/login', loginRequest )
+        var authCode = promisedLoginAuthCodeResponse.data[0].authCode
+        var oAuthTokensRequest = createOAuthTokensRequest(authCode, loginRequest)
 
         // Submit authCode for the oauthToken:
-        var promisedTokenResponse = await axiosInstance.post( '/api/v1/oauth/self/tokens', oauthTokenRequest )
+        var promisedTokenResponse = await axiosInstance.post( '/api/v1/oauth/self/tokens',  oAuthTokensRequest )
         var mobileToken = promisedTokenResponse.data[0].token
         var pwsToken = promisedTokenResponse.data[1].token
         var oauthToken = program.hostname.match( /mobile/ ) ? mobileToken : pwsToken
@@ -89,7 +81,7 @@ async function main()
                 )
         }
 
-    process.exitCode = 0
+        process.exitCode = 0
     }
     catch ( error )
     {
@@ -111,6 +103,7 @@ function createAxiosInstance( host, oauthToken )
         baseURL: proto + '://' + host,
         headers: igtCas.createHeaders( host )
     }
+
     if ( oauthToken ) { defaults.headers['Authorization'] = 'OAuth ' + oauthToken }
 
     return axios.create( defaults )
@@ -133,6 +126,16 @@ async function loggedInAxios( host, credentials )
     }
 
     return axiosInstance.post( '/api/v1/oauth/self/tokens', oauthTokenRequest )
+}
+
+function createOAuthTokensRequest(authCode, loginRequest)
+{
+    return oauthTokenRequest =
+    {
+        authCode: authCode,
+        clientId: loginRequest.clientId,
+        siteId: loginRequest.siteId
+    }
 }
 
 function getAttributes()
