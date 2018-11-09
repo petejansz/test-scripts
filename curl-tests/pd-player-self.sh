@@ -1,32 +1,42 @@
 #!/usr/bin/sh
 
-#   Simple use of curl to test CA Player Direct player/self API's
-#   Pete Jansz, 2018-09-06
+#   Sh test CA Player Direct player/self API's
+#   Login, get oauth token, make GET calls:
+#     'attributes' 'personal-info' 'profile' 'notifications-preferences' 'communication-preferences
+#   Pete Jansz, 2018-11-10
 
 SCRIPT=$(basename $0)
-EX_SYS_ID=8
-# PWS
-CHANNEL_ID=2
-# CA
-CA_SITE_ID=35
-
-let COUNT=1
 HOST=
-PASSWORD=''
-USERNAME=''
-SITE_ID=$CA_SITE_ID
+USERNAME=
+PASSWORD=
+CA_SITE_ID=35
+CA_MOBILE_CLIENT_ID=CAMOBILEAPP
+CA_PWS_CLIENT_ID=SolSet2ndChancePortal
+CA_MOBILE_CHANNEL_ID=3
+CA_PWS_CHANNEL_ID=2
+CA_SYSTEM_ID=8
+
+# Defaults:
 QUIET=false
 HELP=false
+siteId=$CA_SITE_ID
+channelId=$CA_PWS_CHANNEL_ID
+clientId=$CA_PWS_CLIENT_ID
+esaApiKey=DBRDtq3tUERv79ehrheOUiGIrnqxTole
+let COUNT=1
 
 function help()
 {
+  echo "Test CA Player Direct player/self API's"                                   >&2
+  echo "Login, get oauth token, make GET calls to:"                                >&2
+  echo "  attributes, personal-info, profile, notifications-preferences, communication-preferences" >&2
+  echo                                                                             >&2
   echo "USAGE: $(basename $0) [options] -h <hostname> -u <username> -p <password>" >&2
   echo "  options"                                                                 >&2
-  echo "  -h | --host <host>"                                                      >&2
-  echo "  -c | --count <number>     "                                              >&2
+  echo "  -h | --host     <host>"                                                  >&2
+  echo "  -c | --count    <number (default=1)> Repeat API calls               "    >&2
   echo "  -u | --username <username>"                                              >&2
   echo "  -p | --password <password>"                                              >&2
-  echo "       --siteid   <siteid (default=${CA_SITE_ID})>"                        >&2
   echo '  -q | --quiet'                                                            >&2
   echo '  -?   --help'                                                             >&2
 }
@@ -45,11 +55,10 @@ while true; do
       -c | --count    ) COUNT="$2";    shift; shift ;;
       -p | --password ) PASSWORD="$2"; shift; shift ;;
       -u | --username ) USERNAME="$2"; shift; shift ;;
-           --siteid   ) SITE_ID="$2";  shift; shift ;;
       -q | --quiet    ) QUIET=true;    shift ;;
            --help     ) HELP=true;     shift ;;
       -- )                             shift; break ;;
-      * )                              break ;;
+       * )                             break ;;
   esac
 done
 
@@ -59,24 +68,15 @@ if [[ "$HELP" == 'true' || -z "$HOST" || -z "$USERNAME" || -z "$PASSWORD" ]]; th
 fi
 
 HOSTNAME=$HOST
-PROTO='http'
+PROTO=http
 if [[ "$HOSTNAME" =~ '.com' ]]; then
-    PROTO="https"
+    PROTO=https
 fi
 
-if [[ "$HOSTNAME" =~ "mobile" ]]; then
-    CHANNEL_ID=3
+if [[ $HOST =~ "mobile" ]]; then
+    channelId=$CA_MOBILE_CHANNEL_ID
+    clientId=$CA_MOBILE_CLIENT_ID
 fi
-
-function is_email_available() # input-params: EMAIL_NAME; output-value: 'true' | 'false'
-{
-    local EMAIL_NAME=$1
-    local AVAILABLE=$(curl -sX GET "${PROTO}://$HOSTNAME/api/v1/players/available/${EMAIL_NAME}"  \
-      -H 'Cache-Control: no-cache'          \
-      -H "x-ex-system-id: ${EX_SYS_ID}"     \
-      -H "x-channel-id: ${CHANNEL_ID}")
-    echo $AVAILABLE
-}
 
 function get_players_self() # input-params: FUNCTION_NAME; output-value: JSON_CONTENT
 {
@@ -87,11 +87,14 @@ function get_players_self() # input-params: FUNCTION_NAME; output-value: JSON_CO
     fi
 
     curl $CURL_OPTS "${PROTO}://$HOSTNAME/api/v1/players/self/${FUNCTION_NAME}" \
-      -H "x-ex-system-id: ${EX_SYS_ID}"     \
-      -H "x-channel-id: ${CHANNEL_ID}"      \
-      -H "x-site-id: ${SITE_ID}"            \
-      -H "authorization: OAuth ${OAUTH}"    \
-      -H 'cache-control: no-cache'          \
+      -H 'cache-control: no-cache'                      \
+      -H 'content-type: application/json'               \
+      -H "x-site-id: $siteId"                           \
+      -H "x-ex-system-id: $CA_SYSTEM_ID"                \
+      -H "x-channel-id: $channelId"                     \
+      -H "x-esa-api-key: ${esaApiKey}"                  \
+      -H "x-clientip: $(hostname)"                      \
+      -H "authorization: OAuth ${OAUTH}"                \
       -H "x-device-uuid: ${SCRIPT}"
 }
 
