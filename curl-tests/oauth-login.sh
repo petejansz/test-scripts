@@ -1,7 +1,7 @@
 #! /bin/sh
 
 #   OAuth login to CA Player Direct, write oauth-token to stdout
-#   Pete Jansz, 2018-11-10
+#   Pete Jansz, IGT, 2018-11-10
 
 . pd-ca-lib.sh
 

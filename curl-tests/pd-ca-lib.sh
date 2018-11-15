@@ -1,3 +1,7 @@
+# PD Lib of CA functions, constants
+# Pete Jansz, IGT, 2018
+#
+
 CA_SITE_ID=35
 CA_MOBILE_CLIENT_ID=CAMOBILEAPP
 CA_PWS_CLIENT_ID=SolSet2ndChancePortal

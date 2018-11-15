@@ -3,7 +3,7 @@
 #   Sh test CA Player Direct player/self API's
 #   Login, get oauth token, make GET calls:
 #     'attributes' 'personal-info' 'profile' 'notifications-preferences' 'communication-preferences
-#   Pete Jansz, 2018-11-10
+#   Pete Jansz, IGT, 2018-11-10
 
 . pd-ca-lib.sh
 
@@ -16,28 +16,28 @@ PASSWORD=
 QUIET=false
 HELP=false
 let COUNT=1
+ALL_API_NAMES='attributes personal-info profile notifications-preferences communication-preferences'
 
 function help()
 {
   echo "Test CA Player Direct player/self API's"                                   >&2
-  echo "Login, get oauth token, make GET calls to:"                                >&2
-  echo "  attributes, personal-info, profile, notifications-preferences, communication-preferences" >&2
+  echo "Login, get oauth token, make GET calls to API-names:"                      >&2
+  echo "  $ALL_API_NAMES"                                                          >&2
   echo                                                                             >&2
   echo "USAGE: $(basename $0) [options] -h <host> -u <username> -p <password>"     >&2
   echo "  options"                                                                 >&2
   echo "  -h | --host     <host>"                                                  >&2
   echo "       --port     <port>"                                                  >&2
-  echo "  -c | --count    <number (default=1)> Repeat API calls               "    >&2
+  echo "  -c | --count    <number (default=1)> Repeat API calls"                   >&2
   echo "  -u | --username <username>"                                              >&2
   echo "  -p | --password <password>"                                              >&2
+  echo "       --apis <\"name ... \"> from API-names (default=all)"                >&2
   echo '  -q | --quiet'                                                            >&2
   echo '  -?   --help'                                                             >&2
 }
 
-API_NAMES='attributes personal-info profile notifications-preferences communication-preferences'
-
 # options parser:
-OPTS=$(getopt -o c:h:u:p:q --long count:,host:,username:,password:,port:,help,siteid:,quiet -n 'parse-options' -- "$@")
+OPTS=$(getopt -o c:h:u:p:q --long apis:,count:,host:,username:,password:,port:,help,siteid:,quiet -n 'parse-options' -- "$@")
 if [ $? != 0 ]; then
   help
   exit 1
@@ -46,15 +46,16 @@ eval set -- "$OPTS"
 
 while true; do
   case "$1" in
-      -h | --host     ) HOST="$2";     shift; shift ;;
-           --port     ) PORT="$2";     shift; shift ;;
-      -c | --count    ) COUNT="$2";    shift; shift ;;
-      -p | --password ) PASSWORD="$2"; shift; shift ;;
-      -u | --username ) USERNAME="$2"; shift; shift ;;
-      -q | --quiet    ) QUIET=true;    shift ;;
-           --help     ) HELP=true;     shift ;;
-      -- )                             shift; break ;;
-       * )                             break ;;
+      -h | --host     ) HOST="$2";      shift; shift ;;
+           --port     ) PORT="$2";      shift; shift ;;
+      -c | --count    ) COUNT="$2";     shift; shift ;;
+      -p | --password ) PASSWORD="$2";  shift; shift ;;
+      -u | --username ) USERNAME="$2";  shift; shift ;;
+           --apis     ) API_NAMES="$2"; shift; shift ;;
+      -q | --quiet    ) QUIET=true;     shift ;;
+           --help     ) HELP=true;      shift ;;
+      -- )                              shift; break ;;
+       * )                              break ;;
   esac
 done
 
@@ -66,6 +67,10 @@ fi
 if [[ $HOST =~ "mobile" ]]; then
     channelId=$CA_MOBILE_CHANNEL_ID
     clientId=$CA_MOBILE_CLIENT_ID
+fi
+
+if [[ -z "$API_NAMES" ]]; then
+    API_NAMES=$ALL_API_NAMES
 fi
 
 function get_players_self() # input-params: FUNCTION_NAME; output-value: JSON_CONTENT
