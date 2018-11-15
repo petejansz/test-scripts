@@ -3,26 +3,17 @@
 #   OAuth login to CA Player Direct, write oauth-token to stdout
 #   Pete Jansz, 2018-11-10
 
+. pd-ca-lib.sh
+
 SCRIPT=$(basename $0)
 HOST=
 PORT=
-SEC_GW_PORT=8280
 USERNAME=
 PASSWORD=
-CA_SITE_ID=35
-CA_MOBILE_CLIENT_ID=CAMOBILEAPP
-CA_PWS_CLIENT_ID=SolSet2ndChancePortal
-CA_MOBILE_CHANNEL_ID=3
-CA_PWS_CHANNEL_ID=2
-CA_SYSTEM_ID=8
 
 # Defaults:
 QUIET=false
 HELP=false
-siteId=$CA_SITE_ID
-channelId=$CA_PWS_CHANNEL_ID
-clientId=$CA_PWS_CLIENT_ID
-esaApiKey=DBRDtq3tUERv79ehrheOUiGIrnqxTole
 PWS_TOKEN_CUT_FLD_NR=16
 MOB_TOKEN_CUT_FLD_NR=6
 TOKEN_CUT_FIELD_NR=$PWS_TOKEN_CUT_FLD_NR
@@ -30,7 +21,7 @@ TOKEN_CUT_FIELD_NR=$PWS_TOKEN_CUT_FLD_NR
 function help()
 {
   echo "OAuth login to CA Player Direct, write oauth-token to stdout"              >&2
-  echo "    port default=sec-gateway port 8280 when host =~ IP-address"            >&2
+  echo "    port default=sec-gateway port ${SEC_GW_PORT} when host =~ IP-address"  >&2
   echo ""                                                                          >&2
   echo "USAGE: $SCRIPT [options] -h <host> -u <username> -p <password>"            >&2
   echo "  options"                                                                 >&2
@@ -69,20 +60,11 @@ if [[ $HOST =~ "mobile" ]]; then
     TOKEN_CUT_FIELD_NR=$MOB_TOKEN_CUT_FLD_NR
 fi
 
-if [[ "${HOST}" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ && -z "$PORT" ]]; then
-    BASE_URI="http://${HOST}:${SEC_GW_PORT}/california-gateway/api/v1/oauth"
-elif [[ "${HOST}" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ && "$PORT" ]]; then
-    BASE_URI="http://${HOST}:${PORT}/california-gateway/api/v1/oauth"
-elif [[ "${HOST}" =~ '.com' ]]; then
-    BASE_URI="https://${HOST}/api/v1/oauth"
-else
-    BASE_URI="http://${HOST}/api/v1/oauth"
-fi
-
+BASE_URI=$(create_base_uri $HOST $PORT)
 RESOURCE_CREDS="\"resourceOwnerCredentials\": {\"USERNAME\":\"${USERNAME}\", \"PASSWORD\":\"${PASSWORD}\"}"
 
 RESP=$(curl -ksX POST \
-  "${BASE_URI}/login"       \
+  "${BASE_URI}/api/v1/oauth/login"       \
   -H 'cache-control: no-cache'                      \
   -H 'content-type: application/json'               \
   -H "x-site-id: $siteId"                           \
@@ -106,7 +88,7 @@ if [[ -z "${AUTH_CODE}" ]]; then
 fi
 
 TOKENS_RESP=$(curl -ksX POST \
-  "${BASE_URI}/self/tokens" \
+  "${BASE_URI}/api/v1/oauth/self/tokens" \
   -H 'cache-control: no-cache'                      \
   -H 'content-type: application/json'               \
   -H "x-site-id: $siteId"                           \
