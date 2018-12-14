@@ -16,6 +16,7 @@ origid=$CA_ORIG_ID
 reqid=$CA_REQ_ID
 siteid=$CA_SITE_ID
 qs=''
+RESP_CODE_ONLY=false
 
 help()
 {
@@ -25,6 +26,7 @@ help()
   echo "  options"
   echo "       --https (default=http)"
   echo "       --host <host>"
+  echo "  -c | --code (Output only HTTP response code)"
   echo "  -p | --port num (default=${port})"
   echo "  -g | --gametype <draw | instant>"
   echo "  -o | --origid   <origid (default=${CA_ORIG_ID})>"
@@ -36,7 +38,7 @@ help()
 }
 
 # options parser:
-OPTS=$(getopt -o ho:r:s:p:q:g:t: --long https,host:,port:,gametype:,ticket:,help,origid:,reqid:,siteid:,qs: -n 'parse-options' -- "$@")
+OPTS=$(getopt -o cho:r:s:p:q:g:t: --long https,host:,port:,gametype:,ticket:,help,origid:,reqid:,siteid:,qs:,code -n 'parse-options' -- "$@")
 if [ $? != 0 ]; then
   echo "Failed parsing options." >&2
   exit 1
@@ -55,6 +57,7 @@ while true; do
       -s | --siteid   ) siteid="$2";   shift; shift ;;
       -q | --qs       ) qs="$2";       shift; shift ;;
       -t | --ticket   ) ticket="$2";   shift; shift ;;
+      -c | --code     ) RESP_CODE_ONLY=true; shift ;;
       -h | --help     ) help=true;     shift ;;
       -- ) shift; break ;;
       * ) break ;;
@@ -84,12 +87,19 @@ else
   URI="https://${host}/api/v2/${gametype}-games/tickets/inquire${qs}"
 fi
 
-curl -sX POST $URI                          \
+if [[ $RESP_CODE_ONLY =~ 'true' ]]; then
+    CURL_OPTS="-o -I -L -ks -w %{http_code} -X"
+else
+    CURL_OPTS="-sX"
+fi
+
+RESPONSE=$(curl $CURL_OPTS POST $URI        \
   -H 'Cache-Control: no-cache'              \
   -H 'content-type: application/json'       \
   -H "x-originator-id: ${origid}"           \
   -H "x-request-id: ${reqid}"               \
   -H "x-site-id: ${siteid}"                 \
-  -d "{ \"${propname}\" : \"${ticket}\" }"
-
-echo
+  -d "{ \"${propname}\" : \"${ticket}\" }")
+EXIT_CODE=$?
+echo $RESPONSE
+exit $EXIT_CODE
