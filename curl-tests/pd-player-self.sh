@@ -78,7 +78,7 @@ function get_players_self() # input-params: FUNCTION_NAME; output-value: JSON_CO
     local FUNCTION_NAME=$1
     local CURL_OPTS=$2
     if [[ -z "$CURL_OPTS" ]]; then
-      local CURL_OPTS="-o -I -L -ks -w %{http_code}"
+      local CURL_OPTS="-o /dev/null -s -w %{http_code}"
     fi
 
     BASE_URI=$(create_base_uri $HOST $PORT)

@@ -88,9 +88,9 @@ else
 fi
 
 if [[ $RESP_CODE_ONLY =~ 'true' ]]; then
-    CURL_OPTS="-o -I -L -ks -w %{http_code} -X"
+    CURL_OPTS="-o /dev/null -s -w %{http_code} -X"
 else
-    CURL_OPTS="-sX"
+    CURL_OPTS="-svX"
 fi
 
 RESPONSE=$(curl $CURL_OPTS POST $URI        \
