@@ -17,6 +17,7 @@ reqid=$CA_REQ_ID
 siteid=$CA_SITE_ID
 qs=''
 RESP_CODE_ONLY=false
+VERBOSE=false
 
 help()
 {
@@ -26,7 +27,6 @@ help()
   echo "  options"
   echo "       --https (default=http)"
   echo "       --host <host>"
-  echo "  -c | --code (Output only HTTP response code)"
   echo "  -p | --port num (default=${port})"
   echo "  -g | --gametype <draw | instant>"
   echo "  -o | --origid   <origid (default=${CA_ORIG_ID})>"
@@ -34,11 +34,12 @@ help()
   echo "  -s | --siteid   <siteid (default=${CA_SITE_ID})>"
   echo "  -q | --qs       <query-string>, e.g., '?foo=bah&goo=guh'"
   echo "  -t | --ticket   <ticket>"
+  echo "  -v | --verbose"
   echo "  -h | --help"
 }
 
 # options parser:
-OPTS=$(getopt -o cho:r:s:p:q:g:t: --long https,host:,port:,gametype:,ticket:,help,origid:,reqid:,siteid:,qs:,code -n 'parse-options' -- "$@")
+OPTS=$(getopt -o cho:r:s:p:q:g:t:v --long https,host:,port:,gametype:,ticket:,help,origid:,reqid:,siteid:,qs:,code,verbose -n 'parse-options' -- "$@")
 if [ $? != 0 ]; then
   echo "Failed parsing options." >&2
   exit 1
@@ -57,8 +58,8 @@ while true; do
       -s | --siteid   ) siteid="$2";   shift; shift ;;
       -q | --qs       ) qs="$2";       shift; shift ;;
       -t | --ticket   ) ticket="$2";   shift; shift ;;
-      -c | --code     ) RESP_CODE_ONLY=true; shift ;;
-      -h | --help     ) help=true;     shift ;;
+      -v | --verbose  ) VERBOSE=true;         shift ;;
+      -h | --help     ) help=true;            shift ;;
       -- ) shift; break ;;
       * ) break ;;
   esac
@@ -87,19 +88,29 @@ else
   URI="https://${host}/api/v2/${gametype}-games/tickets/inquire${qs}"
 fi
 
-if [[ $RESP_CODE_ONLY =~ 'true' ]]; then
-    CURL_OPTS="-o /dev/null -s -w %{http_code} -X"
+if [[ $VERBOSE =~ 'true' ]]; then
+  CURL_OPTS="-isvX"
 else
-    CURL_OPTS="-svX"
+  CURL_OPTS="-isX"
 fi
-
 RESPONSE=$(curl $CURL_OPTS POST $URI        \
-  -H 'Cache-Control: no-cache'              \
+  -H 'cache-Control: no-cache'              \
   -H 'content-type: application/json'       \
   -H "x-originator-id: ${origid}"           \
   -H "x-request-id: ${reqid}"               \
   -H "x-site-id: ${siteid}"                 \
   -d "{ \"${propname}\" : \"${ticket}\" }")
 EXIT_CODE=$?
-echo $RESPONSE
+
+STATUS_CODE=$(echo "${RESPONSE}" | awk '/^HTTP/{print $2}')
+BODY=$(echo "${RESPONSE}" | awk '/^{.*}$/{print $0}')
+
+if [[ $EXIT_CODE != 0 || $VERBOSE =~ 'true' ]]; then
+  echo "${RESPONSE}"
+elif [[ $EXIT_CODE == 0 && $VERBOSE =~ 'false' ]]; then
+  echo "${STATUS_CODE}/${BODY}"
+else
+  echo "${RESPONSE}"
+fi
+
 exit $EXIT_CODE
