@@ -7,6 +7,7 @@ const modulesPath = '/usr/share/node_modules/'
 const axios = require( modulesPath + 'axios' )
 var program = require( modulesPath + 'commander' )
 var igtCas = require( modulesPath + 'pete-lib/igt-cas' )
+var util = require( 'util' )
 
 program
     .version( '0.0.1' )
@@ -109,25 +110,6 @@ function createAxiosInstance( host, oauthToken )
     return axios.create( defaults )
 }
 
-async function loggedInAxios( host, credentials )
-{
-    var reqData = igtCas.createLoginRequest( host )
-    reqData.resourceOwnerCredentials = { USERNAME: credentials.username, PASSWORD: credentials.password }
-    var axiosInstance = createAxiosInstance( host )
-
-    // Get OAuth authCode
-    axiosInstance.post( '/api/v1/oauth/login', reqData )
-    var resultPromise = await oauthAxiosInstance.post( '/api/v1/oauth/login', oauthLoginRequest )
-    var oauthTokenRequest =
-    {
-        authCode: resultPromise.data[0].authCode,
-        clientId: clientId,
-        siteId: siteId
-    }
-
-    return axiosInstance.post( '/api/v1/oauth/self/tokens', oauthTokenRequest )
-}
-
 function createOAuthTokensRequest(authCode, loginRequest)
 {
     return oauthTokenRequest =
@@ -145,13 +127,24 @@ function getAttributes()
 
 function axiosErrorHandler( error )
 {
-    if ( error.response )
+    if ( error.response && error.response.status < 500 )
     {
         // The request was made and the server responded with a status code
         // that falls out of the range of 2xx
-        console.error( error.response.data )
+        var response =
+        {
+            statusText: error.response.statusText,
+            statusCode: error.response.status,
+            data: error.response.data
+        }
+
+        console.error( response )
+    }
+    else if (error.response && error.response.status >= 500)
+    {
         console.error( error.response.status )
         console.error( error.response.headers )
+        console.error( error.response.data )
     }
     else if ( error.request )
     {
@@ -165,7 +158,8 @@ function axiosErrorHandler( error )
         // Something happened in setting up the request that triggered an Error
         console.error( 'Error', error.message )
     }
-    console.error( error.config )
+
+    //console.error( error.config )
 }
 
 function getCommunicationPreferences()
