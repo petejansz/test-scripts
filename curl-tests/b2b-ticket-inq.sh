@@ -9,7 +9,11 @@ gametype=''
 port=8680
 ticket=''
 CA_SITE_ID=35
-CA_ORIG_ID='10002,0,0,0'
+retailer=10002
+store=6
+terminal=7
+teller=8
+CA_ORIG_ID=$(printf "%s,%s,%s,%s" $retailer $store $terminal $teller)
 CA_REQ_ID=0
 help=false
 origid=$CA_ORIG_ID
@@ -94,8 +98,9 @@ else
   CURL_OPTS="-isX"
 fi
 RESPONSE=$(curl $CURL_OPTS POST $URI        \
-  -H 'cache-Control: no-cache'              \
+  -H 'cache-control: no-cache'              \
   -H 'content-type: application/json'       \
+  -H "x-device-uuid: abc123uuid"            \
   -H "x-originator-id: ${origid}"           \
   -H "x-request-id: ${reqid}"               \
   -H "x-site-id: ${siteid}"                 \
