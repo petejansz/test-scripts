@@ -3,9 +3,10 @@ param
     [string]$h = "cadev1",
     [string]$adminHost = "dev",
     [string]$procHost = "pdcore",
-    [string]$language = "EN",
-    [string]$emailFormat = "HTML",
+    [string]$language,
+    [string]$emailFormat,
     [switch]$notify,
+    [switch]$doPhone,
     [int] $port = 80,
     [string]$p = "Password1",
     [switch]$quiet = $false,
@@ -20,46 +21,73 @@ $ScriptDir = Split-Path $MyInvocation.MyCommand.Path
 function showHelp()
 {
     Write-Host "Automate, PD player notifications."
-    Write-Host "USAGE: ${ScriptName} [options] -h <hostname> -adminHost <hostname> -u <username> -p <password>"
+    Write-Host "USAGE: ${ScriptName} [options] -h <hostname> -adminHost <hostname> -u <username> -p <password> -emailFormat <html|text> -language <en|es>"
     Write-Host "Options:"
-    Write-Host "  -procHost  default=${procHost}"
-    Write-Host "  -hostname default=${hostname}:${port}"
-    Write-Host "  -emailFormat default=${emailFormat}"
-    Write-Host "  -language default=${language}"
+    Write-Host "  -procHost default=${procHost}"
+    Write-Host "  -port default=hostname:${port}"
     Write-Host "  -quiet"
 
     exit 1
 }
 function sendNotifications()
 {
-    Write-Host "Sending AccountActivationMail ... " -NoNewLine
-    (pdplayer -h $h -port $port -u $u -p $p -resendActivationMail).StatusCode
+    # Write-Host "Sending AccountActivationMail ... " -NoNewLine
+    # (pdplayer -h $h -port $port -u $u -p $p -resendActivationMail).StatusCode
 
-    Write-Host "Sending PasswordForgotten ... " -NoNewLine
-    (pdplayer -h $h -port $port -forgotpassword $u).StatusCode
+    # Write-Host "Sending PasswordForgotten ... " -NoNewLine
+    # (pdplayer -h $h -port $port -forgotpassword $u).StatusCode
 
-    Write-Host "Sending 2x ACCOUNT UPDATED - changed values: Password"
-    $results = player-chpwd -hostname $h -port $port -username $u -password $p
+    # Write-Host "Sending 2x ACCOUNT UPDATED - changed values: Password"
+    # $results = player-chpwd -hostname $h -port $port -username $u -password $p
 
-    Write-Host "Sending AccountDeactivationMail ... " -NoNewLine
-    (pdplayer -h $h -port $port -lock "Lock me out!" -u $u -p $p).StatusCode
+    Write-Host "Sending ACCOUNT UPDATED - changed values: Phone number ... " -NoNewLine
+    setPhoneNumber ( Get-Random -min 2000000001 )
 
-    Write-Host "Unlocking account ... " -NoNewLine
-    (pdplayer -h $h -port $port -unlock "Let me in!" -u $u -p $p).StatusCode
+    # Write-Host "Sending AccountDeactivationMail ... " -NoNewLine
+    # (pdplayer -h $h -port $port -lock "Lock me out!" -u $u -p $p).StatusCode
 
-    $playerid = (pd2-admin --host $adminHost --api search --email $u | ConvertFrom-Json).playerId
+    # Write-Host "Unlocking account ... " -NoNewLine
+    # (pdplayer -h $h -port $port -unlock "Let me in!" -u $u -p $p).StatusCode
 
-    Write-Host "Sending AdminNotification for ${playerid} ... " -NoNewLine
-    pd2-admin --host $adminHost --api mknote --playerid $playerid
-    $?
+    # Write-Host "Sending AdminNotification for ${playerid} ... " -NoNewLine
+    # pd2-admin --host $adminHost --api mknote --playerid $playerid
+    # $?
 
     Write-Host "Sending Winner Notification ... " -NoNewLine
     pd-winner-notification.js -e $u -h $procHost -i $playerid
     $?
 
+
     # Write-Host "Sending AccountActivationUnverified ... " -NoNewLine
     # processes-account.js --hostname $procHost --activate -i $playerid
     # $?
+}
+
+function getEmailAddress()
+{
+    $per = (pdplayer -h $h -port $port -u $u -p $p -getPersonalinfo).Content | ConvertFrom-Json
+    $per.emails.personal.address
+}
+
+function setEmailAddress( [string] $newEmailAddress )
+{
+    $per = (pdplayer -h $h -port $port -u $u -p $p -getPersonalinfo).Content | ConvertFrom-Json
+    $per.emails.personal.address = $newEmailAddress
+    $per | ConvertTo-Json | Out-File -Encoding UTF8 -Force /tmp/per.json
+    (((pdplayer -h $h -port $port -u $u -p $p -updatePersonalinfo /tmp/per.json).Content)|ConvertFrom-Json).emails.personal.address
+}
+function getPhoneNumber()
+{
+    $per = (pdplayer -h $h -port $port -u $u -p $p -getPersonalinfo).Content | ConvertFrom-Json
+    $per.phones.home.number
+}
+
+function setPhoneNumber( [int] $newPhoneNumber )
+{
+    $per = (pdplayer -h $h -port $port -u $u -p $p -getPersonalinfo).Content | ConvertFrom-Json
+    $per.phones.home.number = $newPhoneNumber
+    $per | ConvertTo-Json | Out-File -Encoding UTF8 -Force /tmp/per.json
+    (((pdplayer -h $h -port $port -u $u -p $p -updatePersonalinfo /tmp/per.json).Content)|ConvertFrom-Json).phones.home.number
 }
 
 function getEmailFormat()
@@ -90,39 +118,37 @@ function setLanguage( [string] $newLanguage )
     (((pdplayer -h $h -port $port -u $u -p $p -updateprofile /tmp/pro.json).Content)|ConvertFrom-Json).language
 }
 
-function getEmailAddress([int] $playerid)
-{
-    pd2-
-}
-
 if (     $help) {showHelp}
 if ( -not($h) ) {showHelp}
 if ( -not($adminHost)) {showHelp}
 if ( -not($u) ) {showHelp}
 if ( -not($p) ) {showHelp}
+if ( -not($emailFormat) ) {showHelp}
+if ( -not($language) ) {showHelp}
 
 $emailFormat = $emailFormat.ToUpper()
 $language = $language.ToUpper()
+$playerid = (pd2-admin --host $adminHost --api search --email $u | ConvertFrom-Json).playerId
+$origEmailFormat = getEmailFormat
 
-$initialEmailFormat = getEmailFormat
-if ($initialEmailFormat -eq $emailFormat)
+if ($origEmailFormat -eq $emailFormat)
 {
-    Write-Host ("Email format: {0} " -f $initialEmailFormat)
+    Write-Host ("Email format: {0} " -f $origEmailFormat)
 }
 else
 {
-    Write-Host ("Updating emailFormat from {0} to setting ${emailFormat} ..." -f $initialEmailFormat)
+    Write-Host ("Updating emailFormat from {0} to setting ${emailFormat} ..." -f $origEmailFormat)
     Write-Host ("Email format now: {0} " -f (setEmailFormat $emailFormat))
 }
 
-$initialLanguage = getLanguage
-if ($initialLanguage -eq $language)
+$origLanguage = getLanguage
+if ($origLanguage -eq $language)
 {
-    Write-Host ("Language: {0} " -f $initialLanguage)
+    Write-Host ("Language: {0} " -f $origLanguage)
 }
 else
 {
-    Write-Host ("Updating language from {0} to setting ${language} ..." -f $initialLanguage)
+    Write-Host ("Updating language from {0} to setting ${language} ..." -f $origLanguage)
     Write-Host ("Language now: {0} " -f (setLanguage $language))
 }
 
