@@ -11,6 +11,7 @@ SCRIPT=$(basename $0)
 HOST=
 USERNAME=
 PASSWORD=
+OAUTH=
 
 # Defaults:
 QUIET=false
@@ -20,24 +21,25 @@ ALL_API_NAMES='attributes personal-info profile notifications-preferences commun
 
 function help()
 {
-  echo "Test CA Player Direct player/self API's"                                   >&2
-  echo "Login, get oauth token, make GET calls to API-names:"                      >&2
-  echo "  $ALL_API_NAMES"                                                          >&2
-  echo                                                                             >&2
-  echo "USAGE: $(basename $0) [options] -h <host> -u <username> -p <password>"     >&2
-  echo "  options"                                                                 >&2
-  echo "  -h | --host     <host>"                                                  >&2
-  echo "       --port     <port>"                                                  >&2
-  echo "  -c | --count    <number (default=1)> Repeat API calls"                   >&2
-  echo "  -u | --username <username>"                                              >&2
-  echo "  -p | --password <password>"                                              >&2
-  echo "       --apis <\"name ... \"> from API-names (default=all)"                >&2
-  echo '  -q | --quiet'                                                            >&2
-  echo '  -?   --help'                                                             >&2
+  echo "Test CA Player Direct player/self API's"                                                  >&2
+  echo "Login, get oauth token, make GET calls to API-names:"                                     >&2
+  echo "  $ALL_API_NAMES"                                                                         >&2
+  echo                                                                                            >&2
+  echo "USAGE: $(basename $0) [options] -h <host> -u <username> -p <password> | -o <oauth token>" >&2
+  echo "  options"                                                                                >&2
+  echo "  -h | --host     <host>"                                                                 >&2
+  echo "       --port     <port>"                                                                 >&2
+  echo "  -c | --count    <number (default=1)> Repeat API calls"                                  >&2
+  echo "  -o | --oauth <oauth token>"                                                             >&2
+  echo "  -u | --username <username>"                                                             >&2
+  echo "  -p | --password <password>"                                                             >&2
+  echo "       --apis <\"name ... \"> from API-names (default=all)"                               >&2
+  echo '  -q | --quiet'                                                                           >&2
+  echo '  -?   --help'                                                                            >&2
 }
 
 # options parser:
-OPTS=$(getopt -o c:h:u:p:q --long apis:,count:,host:,username:,password:,port:,help,siteid:,quiet -n 'parse-options' -- "$@")
+OPTS=$(getopt -o c:h:o:u:p:q --long apis:,count:,host:,oauth:,username:,password:,port:,help,siteid:,quiet -n 'parse-options' -- "$@")
 if [ $? != 0 ]; then
   help
   exit 1
@@ -49,6 +51,7 @@ while true; do
       -h | --host     ) HOST="$2";      shift; shift ;;
            --port     ) PORT="$2";      shift; shift ;;
       -c | --count    ) COUNT="$2";     shift; shift ;;
+      -o | --oauth    ) OAUTH="$2";     shift; shift ;;
       -p | --password ) PASSWORD="$2";  shift; shift ;;
       -u | --username ) USERNAME="$2";  shift; shift ;;
            --apis     ) API_NAMES="$2"; shift; shift ;;
@@ -59,7 +62,12 @@ while true; do
   esac
 done
 
-if [[ "$HELP" == 'true' || -z "$HOST" || -z "$USERNAME" || -z "$PASSWORD" ]]; then
+if [[ "$HELP" == 'true' || -z "$HOST" ]]; then
+  help
+  exit 1
+fi
+
+if [[ -z "$OAUTH" && -z "$USERNAME" && -z "$PASSWORD" ]]; then
   help
   exit 1
 fi
@@ -122,8 +130,10 @@ function exec_players_self_apis()
     done
 }
 
-#echo "Is email available? $(is_email_available $USERNAME)"
-OAUTH=$(pd_login $HOST $USERNAME $PASSWORD)
+if [[ -z "$OAUTH" ]]; then
+    OAUTH=$(pd_login $HOST $USERNAME $PASSWORD)
+fi
+
 while [[ $COUNT -ne 0 ]]; do
   exec_players_self_apis
   let COUNT--
