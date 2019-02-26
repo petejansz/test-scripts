@@ -1,5 +1,5 @@
 /*
-    Axios aysynchronous/concurrent REST calls, wait for all responses, promises
+    Axios REST calls to PD player/self APIs, synchronous or async
     Pete Jansz
 */
 
@@ -7,16 +7,19 @@ const modulesPath = '/usr/share/node_modules/'
 const axios = require( modulesPath + 'axios' )
 var program = require( modulesPath + 'commander' )
 var igtCas = require( modulesPath + 'pete-lib/igt-cas' )
-var util = require( 'util' )
+const API_BASE_PATH = '/api/v1/players/self/'
+const ALL_API_NAMES = ['attributes', 'communication-preferences', 'notifications', 'notifications-preferences', 'personal-info', 'profile']
 
 program
     .version( '0.0.1' )
-    .description( 'Axios aysynchronous/concurrent REST calls to PD player/self APIs' )
-    .usage(  '-h <host> -u <username> -p <password>' )
+    .description( 'REST calls to PD player/self APIs' )
+    .usage( '-h <host> -u <username> -p <password>' )
+    .option( '-a, --async', 'Asynchronous mode' )
     .option( '-c, --count [count]', 'Repeat count times' )
     .option( '-h, --hostname <hostname>', 'Hostname' )
-    .option( '-u, --username [username]', 'Username' )
-    .option( '-p, --password [password]', 'Password' )
+    .option( '-u, --username <username>', 'Username' )
+    .option( '-p, --password <password>', 'Password' )
+    .option( '--api <name,...>', 'Names: ' + ALL_API_NAMES, commanderList )
     .option( '-q, --quiet', 'Shhhh' )
     .parse( process.argv )
 
@@ -25,6 +28,28 @@ process.exitCode = 1
 if ( !program.hostname && !program.username || !program.password )
 {
     program.help()
+}
+
+var apiNames = []
+
+if ( program.api )
+{
+    for ( var i = 0; i < program.api.length; i++ )
+    {
+        var name = program.api[i]
+        if ( ALL_API_NAMES.indexOf( name ) > -1 )
+        {
+            apiNames.push( name )
+        }
+        else
+        {
+            program.help()
+        }
+    }
+}
+else
+{
+    apiNames = ALL_API_NAMES
 }
 
 var axiosInstance
@@ -40,42 +65,61 @@ async function main()
         // Login for the authCode:
         var promisedLoginAuthCodeResponse = await axiosInstance.post( '/api/v1/oauth/login', loginRequest )
         var authCode = promisedLoginAuthCodeResponse.data[0].authCode
-        var oAuthTokensRequest = createOAuthTokensRequest(authCode, loginRequest)
+        var oAuthTokensRequest = createOAuthTokensRequest( authCode, loginRequest )
 
         // Submit authCode for the oauthToken:
-        var promisedTokenResponse = await axiosInstance.post( '/api/v1/oauth/self/tokens',  oAuthTokensRequest )
+        var promisedTokenResponse = await axiosInstance.post( '/api/v1/oauth/self/tokens', oAuthTokensRequest )
         var mobileToken = promisedTokenResponse.data[0].token
         var pwsToken = promisedTokenResponse.data[1].token
         var oauthToken = program.hostname.match( /mobile/ ) ? mobileToken : pwsToken
 
         axiosInstance.defaults.headers.common['Authorization'] = "OAuth " + oauthToken
-
         var output = {}
+
+        if ( !program.async )
+        {
+            for ( var i = 0; i < apiNames.length; i++ )
+            {
+                var name = apiNames[i]
+                var promise = await axiosInstance.get( API_BASE_PATH + apiNames[i] )
+                output[name] = promise.data
+            }
+
+            console.log( JSON.stringify( output ) )
+            process.exitCode = 0
+            process.exit()
+        }
+
         var count = program.count ? program.count : 1
         for ( var i = 0; i < count; i++ )
         {
             axios.all
                 (
-                [
-                    getAttributes(),
-                    getCommunicationPreferences(),
-                    getNotifications(),
-                    getNotificationPreferences(),
-                    getProfile(),
-                    getPersonalInfo()
-                ]
+                    [
+                        axiosInstance.get( API_BASE_PATH + 'attributes' ),
+                        axiosInstance.get( API_BASE_PATH + 'communication-preferences' ),
+                        axiosInstance.get( API_BASE_PATH + 'notifications' ),
+                        axiosInstance.get( API_BASE_PATH + 'notifications-preferences' ),
+                        axiosInstance.get( API_BASE_PATH + 'personal-info' ),
+                        axiosInstance.get( API_BASE_PATH + 'profile' ),
+                    ]
                 )
                 .then( axios.spread( function
                     (
-                        attribs, commPreferences, notifications, notifPreferences, profile, persInfo
+                        promisedAttribs,
+                        promisedCommPreferences,
+                        promisedNotifications,
+                        promisedNotifPreferences,
+                        promisedProfile,
+                        promisedPersInfo
                     )
                 {
-                    output.attributes = attribs.data
-                    output.communicationPreferences = commPreferences.data
-                    output.notifications = notifications.data
-                    output.notifPreferences = notifPreferences.data
-                    output.profile = profile.data
-                    output.personalInfo = persInfo.data
+                    output['attributes'] = promisedAttribs.data
+                    output['communication-preferences'] = promisedCommPreferences.data
+                    output['notifications'] = promisedNotifications.data
+                    output['notifications-preferences'] = promisedNotifPreferences.data
+                    output['profile'] = promisedProfile.data
+                    output['personal-info'] = promisedPersInfo.data
 
                     if ( !program.quiet ) { console.log( JSON.stringify( output ) ) }
                 } )
@@ -110,19 +154,14 @@ function createAxiosInstance( host, oauthToken )
     return axios.create( defaults )
 }
 
-function createOAuthTokensRequest(authCode, loginRequest)
+function createOAuthTokensRequest( authCode, loginRequest )
 {
     return oauthTokenRequest =
-    {
-        authCode: authCode,
-        clientId: loginRequest.clientId,
-        siteId: loginRequest.siteId
-    }
-}
-
-function getAttributes()
-{
-    return axiosInstance.get( '/api/v1/players/self/attributes' )
+        {
+            authCode: authCode,
+            clientId: loginRequest.clientId,
+            siteId: loginRequest.siteId
+        }
 }
 
 function axiosErrorHandler( error )
@@ -140,7 +179,7 @@ function axiosErrorHandler( error )
 
         console.error( response )
     }
-    else if (error.response && error.response.status >= 500)
+    else if ( error.response && error.response.status >= 500 )
     {
         console.error( error.response.status )
         console.error( error.response.headers )
@@ -162,28 +201,22 @@ function axiosErrorHandler( error )
     //console.error( error.config )
 }
 
-function getCommunicationPreferences()
+// values delimited by space or comma:
+function commanderList( val )
 {
-    return axiosInstance.get( '/api/v1/players/self/communication-preferences' )
-}
+    var tokens = []
+    if ( val.match( / /g ) !== null )
+    {
+        tokens = val.split( ' ' )
+    }
+    else if ( val.match( /,/g ) !== null )
+    {
+        tokens = val.split( ',' )
+    }
+    else
+    {
+        tokens.push( val )
+    }
 
-function getNotifications()
-{
-    return axiosInstance.get( '/api/v1/players/self/notifications' )
+    return tokens
 }
-
-function getNotificationPreferences()
-{
-    return axiosInstance.get( '/api/v1/players/self/notifications-preferences' )
-}
-
-function getProfile()
-{
-    return axiosInstance.get( '/api/v1/players/self/profile' )
-}
-
-function getPersonalInfo()
-{
-    return axiosInstance.get( '/api/v1/players/self/personal-info' )
-}
-
