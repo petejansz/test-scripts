@@ -17,7 +17,7 @@ OAUTH=
 QUIET=false
 HELP=false
 let COUNT=1
-ALL_API_NAMES='attributes personal-info profile notifications-preferences communication-preferences'
+ALL_API_NAMES='attributes communication-preferences notifications notifications-preferences personal-info profile'
 
 function help()
 {
@@ -33,7 +33,7 @@ function help()
   echo "  -o | --oauth <oauth token>"                                                             >&2
   echo "  -u | --username <username>"                                                             >&2
   echo "  -p | --password <password>"                                                             >&2
-  echo "       --apis <\"name ... \"> from API-names (default=all)"                               >&2
+  echo "       --api <\"name ... \"> names (default=${ALL_API_NAMES})"                            >&2
   echo '  -q | --quiet'                                                                           >&2
   echo '  -?   --help'                                                                            >&2
 }
