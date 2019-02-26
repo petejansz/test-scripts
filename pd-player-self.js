@@ -75,55 +75,55 @@ async function main()
 
         axiosInstance.defaults.headers.common['Authorization'] = "OAuth " + oauthToken
         var output = {}
-
-        if ( !program.async )
-        {
-            for ( var i = 0; i < apiNames.length; i++ )
-            {
-                var name = apiNames[i]
-                var promise = await axiosInstance.get( API_BASE_PATH + apiNames[i] )
-                output[name] = promise.data
-            }
-
-            console.log( JSON.stringify( output ) )
-            process.exitCode = 0
-            process.exit()
-        }
-
         var count = program.count ? program.count : 1
+
         for ( var i = 0; i < count; i++ )
         {
-            axios.all
-                (
-                    [
-                        axiosInstance.get( API_BASE_PATH + 'attributes' ),
-                        axiosInstance.get( API_BASE_PATH + 'communication-preferences' ),
-                        axiosInstance.get( API_BASE_PATH + 'notifications' ),
-                        axiosInstance.get( API_BASE_PATH + 'notifications-preferences' ),
-                        axiosInstance.get( API_BASE_PATH + 'personal-info' ),
-                        axiosInstance.get( API_BASE_PATH + 'profile' ),
-                    ]
-                )
-                .then( axios.spread( function
-                    (
-                        promisedAttribs,
-                        promisedCommPreferences,
-                        promisedNotifications,
-                        promisedNotifPreferences,
-                        promisedProfile,
-                        promisedPersInfo
-                    )
+            if ( !program.async )
+            {
+                for ( var j = 0; j < apiNames.length; j++ )
                 {
-                    output['attributes'] = promisedAttribs.data
-                    output['communication-preferences'] = promisedCommPreferences.data
-                    output['notifications'] = promisedNotifications.data
-                    output['notifications-preferences'] = promisedNotifPreferences.data
-                    output['profile'] = promisedProfile.data
-                    output['personal-info'] = promisedPersInfo.data
+                    var name = apiNames[j]
+                    var promise = await axiosInstance.get( API_BASE_PATH + apiNames[j] )
+                    output[name] = promise.data
+                }
 
-                    if ( !program.quiet ) { console.log( JSON.stringify( output ) ) }
-                } )
-                )
+                console.log( JSON.stringify( output ) )
+            }
+            else
+            {
+                axios.all
+                    (
+                        [
+                            axiosInstance.get( API_BASE_PATH + 'attributes' ),
+                            axiosInstance.get( API_BASE_PATH + 'communication-preferences' ),
+                            axiosInstance.get( API_BASE_PATH + 'notifications' ),
+                            axiosInstance.get( API_BASE_PATH + 'notifications-preferences' ),
+                            axiosInstance.get( API_BASE_PATH + 'personal-info' ),
+                            axiosInstance.get( API_BASE_PATH + 'profile' ),
+                        ]
+                    )
+                    .then( axios.spread( function
+                        (
+                            promisedAttribs,
+                            promisedCommPreferences,
+                            promisedNotifications,
+                            promisedNotifPreferences,
+                            promisedProfile,
+                            promisedPersInfo
+                        )
+                    {
+                        output['attributes'] = promisedAttribs.data
+                        output['communication-preferences'] = promisedCommPreferences.data
+                        output['notifications'] = promisedNotifications.data
+                        output['notifications-preferences'] = promisedNotifPreferences.data
+                        output['profile'] = promisedProfile.data
+                        output['personal-info'] = promisedPersInfo.data
+
+                        if ( !program.quiet ) { console.log( JSON.stringify( output ) ) }
+                    } )
+                    )
+            }
         }
 
         process.exitCode = 0
