@@ -7,6 +7,7 @@ const modulesPath = '/usr/share/node_modules/'
 const axios = require( modulesPath + 'axios' )
 var program = require( modulesPath + 'commander' )
 var igtCas = require( modulesPath + 'pete-lib/igt-cas' )
+var path = require( 'path' )
 const API_BASE_PATH = '/api/v1/players/self/'
 const ALL_API_NAMES = ['attributes', 'communication-preferences', 'notifications', 'notifications-preferences', 'personal-info', 'profile']
 
@@ -74,55 +75,44 @@ async function main()
         var oauthToken = program.hostname.match( /mobile/ ) ? mobileToken : pwsToken
 
         axiosInstance.defaults.headers.common['Authorization'] = "OAuth " + oauthToken
-        var output = {}
+        var objects = {}
         var count = program.count ? program.count : 1
-
-        for ( var i = 0; i < count; i++ )
+        while ( count > 0 )
         {
+            count--
             if ( !program.async )
             {
-                for ( var j = 0; j < apiNames.length; j++ )
+                for ( var index in apiNames )
                 {
-                    var name = apiNames[j]
-                    var promise = await axiosInstance.get( API_BASE_PATH + apiNames[j] )
-                    output[name] = promise.data
+                    var name = apiNames[index]
+                    var promise = await axiosInstance.get( API_BASE_PATH + name )
+                    objects[name] = promise.data
                 }
 
-                console.log( JSON.stringify( output ) )
+                console.log( JSON.stringify( objects ) )
             }
             else
             {
-                axios.all
-                    (
-                        [
-                            axiosInstance.get( API_BASE_PATH + 'attributes' ),
-                            axiosInstance.get( API_BASE_PATH + 'communication-preferences' ),
-                            axiosInstance.get( API_BASE_PATH + 'notifications' ),
-                            axiosInstance.get( API_BASE_PATH + 'notifications-preferences' ),
-                            axiosInstance.get( API_BASE_PATH + 'personal-info' ),
-                            axiosInstance.get( API_BASE_PATH + 'profile' ),
-                        ]
-                    )
-                    .then( axios.spread( function
-                        (
-                            promisedAttribs,
-                            promisedCommPreferences,
-                            promisedNotifications,
-                            promisedNotifPreferences,
-                            promisedProfile,
-                            promisedPersInfo
-                        )
-                    {
-                        output['attributes'] = promisedAttribs.data
-                        output['communication-preferences'] = promisedCommPreferences.data
-                        output['notifications'] = promisedNotifications.data
-                        output['notifications-preferences'] = promisedNotifPreferences.data
-                        output['profile'] = promisedProfile.data
-                        output['personal-info'] = promisedPersInfo.data
+                var promises = []
+                for ( var index in apiNames )
+                {
+                    var name = apiNames[index]
+                    promises.push( axiosInstance.get( API_BASE_PATH + name ) )
+                }
 
-                        if ( !program.quiet ) { console.log( JSON.stringify( output ) ) }
+                Promise.all( promises )
+                    .then( function ( values )
+                    {
+                        for ( var i = 0; i < values.length; i++ )
+                        {
+                            var url = values[i].config.url
+                            var name = path.basename( url )
+                            var data = values[i].data
+                            objects[name] = data
+                        }
+
+                        console.log( JSON.stringify( objects ) )
                     } )
-                    )
             }
         }
 
