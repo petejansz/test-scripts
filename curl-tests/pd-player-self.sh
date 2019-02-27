@@ -16,6 +16,8 @@ OAUTH=
 # Defaults:
 QUIET=false
 HELP=false
+VERBOSE=false
+DEFAULT_CURL_OPTS="-o /dev/null -s -w %{http_code}"
 let COUNT=1
 ALL_API_NAMES='attributes communication-preferences notifications notifications-preferences personal-info profile'
 
@@ -35,11 +37,12 @@ function help()
   echo "  -p | --password <password>"                                                             >&2
   echo "       --api <\"name ... \"> names (default=${ALL_API_NAMES})"                            >&2
   echo '  -q | --quiet'                                                                           >&2
+  echo "  -v | --verbose"                                                                         >&2
   echo '  -?   --help'                                                                            >&2
 }
 
 # options parser:
-OPTS=$(getopt -o c:h:o:u:p:q --long apis:,count:,host:,oauth:,username:,password:,port:,help,siteid:,quiet -n 'parse-options' -- "$@")
+OPTS=$(getopt -o c:h:o:u:p:qv --long apis:,count:,host:,oauth:,username:,password:,port:,help,siteid:,quiet,verbose -n 'parse-options' -- "$@")
 if [ $? != 0 ]; then
   help
   exit 1
@@ -56,6 +59,7 @@ while true; do
       -u | --username ) USERNAME="$2";  shift; shift ;;
            --apis     ) API_NAMES="$2"; shift; shift ;;
       -q | --quiet    ) QUIET=true;     shift ;;
+      -v | --verbose  ) VERBOSE=true;   shift ;;
            --help     ) HELP=true;      shift ;;
       -- )                              shift; break ;;
        * )                              break ;;
@@ -85,8 +89,13 @@ function get_players_self() # input-params: FUNCTION_NAME; output-value: JSON_CO
 {
     local FUNCTION_NAME=$1
     local CURL_OPTS=$2
+
     if [[ -z "$CURL_OPTS" ]]; then
-      local CURL_OPTS="-o /dev/null -s -w %{http_code}"
+      local CURL_OPTS=$DEFAULT_CURL_OPTS #"-o /dev/null -s -w %{http_code}"
+    fi
+
+    if [[ $VERBOSE == 'true' ]]; then
+        CURL_OPTS="-v ${CURL_OPTS}"
     fi
 
     BASE_URI=$(create_base_uri $HOST $PORT)
