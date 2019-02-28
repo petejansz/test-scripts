@@ -89,7 +89,10 @@ async function main()
                     objects[name] = promise.data
                 }
 
-                console.log( JSON.stringify( objects ) )
+                if ( !program.quiet )
+                {
+                    console.log( JSON.stringify( objects ) )
+                }
             }
             else
             {
@@ -111,7 +114,10 @@ async function main()
                             objects[name] = data
                         }
 
-                        console.log( JSON.stringify( objects ) )
+                        if ( !program.quiet )
+                        {
+                            console.log( JSON.stringify( objects ) )
+                        }
                     } )
             }
         }
