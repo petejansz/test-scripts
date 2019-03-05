@@ -14,6 +14,18 @@ channelId=$CA_PWS_CHANNEL_ID
 clientId=$CA_PWS_CLIENT_ID
 esaApiKey=DBRDtq3tUERv79ehrheOUiGIrnqxTole
 
+function qualified_cadev_name # ("cadev1|cadev1.gtech.com") : cadev1.gtech.com
+{
+    local HOST=$1
+    local QUALIFIED_NAME="${HOST}"
+
+    if [[ ! "${HOST}" =~ 'gtech.com' ]]; then
+        QUALIFIED_NAME="${HOST}.gtech.com"
+    fi
+
+    echo "$QUALIFIED_NAME"
+}
+
 function create_base_uri
 {
     local HOST=$1
@@ -24,10 +36,10 @@ function create_base_uri
         BASE_URI="http://${HOST}:${PORT}/california-gateway"
     elif [[ "${HOST}" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ && "$PORT" ]]; then
         BASE_URI="http://${HOST}:${PORT}/california-gateway"
-    elif [[ "${HOST}" =~ '.com' ]]; then
-        BASE_URI="https://${HOST}"
+    elif [[ "${HOST}" =~ "cadev" ]]; then
+        BASE_URI="http://$(qualified_cadev_name ${HOST})"
     else
-        BASE_URI="http://${HOST}"
+        BASE_URI="https://${HOST}"
     fi
 
     echo $BASE_URI
