@@ -60,8 +60,14 @@ async function main()
 {
     try
     {
-        var loginRequest = igtCas.createLoginRequest( program.hostname, program.username, program.password )
-        axiosInstance = createAxiosInstance( program.hostname )
+        var qualifiedHostname = program.hostname
+        if ( qualifiedHostname.match( /cadev1$/i ) )
+        {
+            qualifiedHostname += '.gtech.com'
+        }
+
+        var loginRequest = igtCas.createLoginRequest( qualifiedHostname, program.username, program.password )
+        axiosInstance = createAxiosInstance( qualifiedHostname )
 
         // Login for the authCode:
         var promisedLoginAuthCodeResponse = await axiosInstance.post( '/api/v1/oauth/login', loginRequest )
@@ -72,7 +78,7 @@ async function main()
         var promisedTokenResponse = await axiosInstance.post( '/api/v1/oauth/self/tokens', oAuthTokensRequest )
         var mobileToken = promisedTokenResponse.data[0].token
         var pwsToken = promisedTokenResponse.data[1].token
-        var oauthToken = program.hostname.match( /mobile/ ) ? mobileToken : pwsToken
+        var oauthToken = qualifiedHostname.match( /mobile/ ) ? mobileToken : pwsToken
 
         axiosInstance.defaults.headers.common['Authorization'] = "OAuth " + oauthToken
         var objects = {}
