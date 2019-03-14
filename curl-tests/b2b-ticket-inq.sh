@@ -81,15 +81,17 @@ fi
 
 if [ "$gametype" = "draw" ]; then
   propname=ticketSerialNumber
+  V=v2
 else
   gametype=instant
   propname=barcode
+  V=v1
 fi
 
 if [[ "$proto" = "http" ]]; then
-  URI="http://${host}:${port}/api/v2/${gametype}-games/tickets/inquire${qs}"
+  URI="http://${host}:${port}/api/${V}/${gametype}-games/tickets/inquire${qs}"
 else
-  URI="https://${host}/api/v2/${gametype}-games/tickets/inquire${qs}"
+  URI="https://${host}/api/${V}/${gametype}-games/tickets/inquire${qs}"
 fi
 
 if [[ $VERBOSE =~ 'true' ]]; then
