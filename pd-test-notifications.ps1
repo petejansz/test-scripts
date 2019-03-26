@@ -34,33 +34,34 @@ function sendNotifications()
     # Write-Host "Sending AccountActivationMail ... " -NoNewLine
     # (pdplayer -h $h -port $port -u $u -p $p -resendActivationMail).StatusCode
 
-    # Write-Host "Sending PasswordForgotten ... " -NoNewLine
-    # (pdplayer -h $h -port $port -forgotpassword $u).StatusCode
+    Write-Host "Sending PasswordForgotten ... " -NoNewLine
+    (pdplayer -h $h -port $port -forgotpassword $u).StatusCode
 
-    # Write-Host "Sending 2x ACCOUNT UPDATED - changed values: Password"
-    # $results = player-chpwd -hostname $h -port $port -username $u -password $p
+    Write-Host "Sending 2x ACCOUNT UPDATED - changed values: Password"
+    $results = player-chpwd -hostname $h -port $port -username $u -password $p
 
-    Write-Host "Sending ACCOUNT UPDATED - changed values: Phone number ... " -NoNewLine
+    Write-Host "Sending ACCOUNT UPDATED - changed values: Phone number ... " #-NoNewLine
     setPhoneNumber ( Get-Random -min 2000000001 )
 
-    # Write-Host "Sending AccountDeactivationMail ... " -NoNewLine
-    # (pdplayer -h $h -port $port -lock "Lock me out!" -u $u -p $p).StatusCode
+    Write-Host "Sending AccountDeactivationMail ... " -NoNewLine
+    $foo = pdplayer -h $h -port $port -lock "Lock me out!" -u $u -p $p | ConvertFrom-Json
+    Write-Host $foo #.StatusCode
 
-    # Write-Host "Unlocking account ... " -NoNewLine
-    # (pdplayer -h $h -port $port -unlock "Let me in!" -u $u -p $p).StatusCode
+    Write-Host "Unlocking account ... " -NoNewLine
+    $foo = pdplayer -h $h -port $port -unlock "Let me in!" -u $u -p $p | ConvertFrom-Json
+    Write-Host $foo #.StatusCode
 
-    # Write-Host "Sending AdminNotification for ${playerid} ... " -NoNewLine
-    # pd2-admin --host $adminHost --api mknote --playerid $playerid
-    # $?
+    Write-Host "Sending AdminNotification for ${playerid} ... " -NoNewLine
+    pd2-admin --host $adminHost --api mknote --playerid $playerid
+    $?
 
     Write-Host "Sending Winner Notification ... " -NoNewLine
     pd-winner-notification.js -e $u -h $procHost -i $playerid
     $?
 
-
-    # Write-Host "Sending AccountActivationUnverified ... " -NoNewLine
-    # processes-account.js --hostname $procHost --activate -i $playerid
-    # $?
+    Write-Host "Sending AccountActivationUnverified ... " -NoNewLine
+    processes-account.js --hostname $procHost --activate -i $playerid
+    $?
 }
 
 function getEmailAddress()
@@ -71,37 +72,43 @@ function getEmailAddress()
 
 function setEmailAddress( [string] $newEmailAddress )
 {
-    $per = (pdplayer -h $h -port $port -u $u -p $p -getPersonalinfo).Content | ConvertFrom-Json
+    $per = pdplayer -h $h -port $port -u $u -p $p -getPersonalinfo | ConvertFrom-Json
     $per.emails.personal.address = $newEmailAddress
     $per | ConvertTo-Json | Out-File -Encoding UTF8 -Force /tmp/per.json
-    (((pdplayer -h $h -port $port -u $u -p $p -updatePersonalinfo /tmp/per.json).Content)|ConvertFrom-Json).emails.personal.address
+    $o1 = pdplayer -h $h -port $port -u $u -p $p -updatePersonalinfo /tmp/per.json | ConvertFrom-Json
+    $o1.emails.personal.address
 }
 function getPhoneNumber()
 {
-    $per = (pdplayer -h $h -port $port -u $u -p $p -getPersonalinfo).Content | ConvertFrom-Json
+    $per = pdplayer -h $h -port $port -u $u -p $p -getPersonalinfo | ConvertFrom-Json
     $per.phones.home.number
 }
 
 function setPhoneNumber( [int] $newPhoneNumber )
 {
-    $per = (pdplayer -h $h -port $port -u $u -p $p -getPersonalinfo).Content | ConvertFrom-Json
+    $per = pdplayer -h $h -port $port -u $u -p $p -getPersonalinfo | ConvertFrom-Json
     $per.phones.home.number = $newPhoneNumber
-    $per | ConvertTo-Json | Out-File -Encoding UTF8 -Force /tmp/per.json
-    (((pdplayer -h $h -port $port -u $u -p $p -updatePersonalinfo /tmp/per.json).Content)|ConvertFrom-Json).phones.home.number
+    $tempFile = New-TemporaryFile
+    $per | ConvertTo-Json | Out-File -Encoding UTF8 -Force $tempFile
+    sleep 4
+    $o1 = pdplayer -h $h -port $port -u $u -p $p -updatePersonalinfo $tempFile #| ConvertFrom-Json
+    # $o1.phones.home.number
+    rm $tempFile
 }
 
 function getEmailFormat()
 {
-    $commprefs = (pdplayer -h $h -port $port -u $u -p $p -getcommprefs).Content | ConvertFrom-Json
+    $commprefs = pdplayer -h $h -port $port -u $u -p $p -getcommprefs | ConvertFrom-Json
     $commprefs.emailFormat
 }
 
 function setEmailFormat( [string] $newEmailFormat )
 {
-    $commprefs = (pdplayer -h $h -port $port -u $u -p $p -getcommprefs).Content | ConvertFrom-Json
+    $commprefs = pdplayer -h $h -port $port -u $u -p $p -getcommprefs | ConvertFrom-Json
     $commprefs.emailFormat = $newEmailFormat
     $commprefs | ConvertTo-Json | Out-File -Encoding UTF8 -Force /tmp/comprefs.json
-    (((pdplayer -h $h -port $port -u $u -p $p -updatecommprefs /tmp/comprefs.json).Content)|ConvertFrom-Json).emailFormat
+    $o = pdplayer -h $h -port $port -u $u -p $p -updatecommprefs /tmp/comprefs.json | ConvertFrom-Json
+    $o.emailFormat
 }
 
 function getLanguage()
@@ -115,7 +122,8 @@ function setLanguage( [string] $newLanguage )
     $profile = (pdplayer -h $h -port $port -u $u -p $p -getprofile).Content | ConvertFrom-Json
     $profile.language = $newLanguage
     $profile | ConvertTo-Json | Out-File -Encoding UTF8 -Force /tmp/pro.json
-    (((pdplayer -h $h -port $port -u $u -p $p -updateprofile /tmp/pro.json).Content)|ConvertFrom-Json).language
+    $o = pdplayer -h $h -port $port -u $u -p $p -updateprofile /tmp/pro.json | ConvertFrom-Json
+    $o.language
 }
 
 if (     $help) {showHelp}

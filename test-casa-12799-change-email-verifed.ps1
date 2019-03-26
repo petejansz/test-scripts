@@ -35,17 +35,9 @@ function setAccountToActivatedState()
     Write-Host "Setting account to verified, activated state ... "  -NoNewLine
     $adminHost = $envname.split('-')[1]
     $playerid = (pd2-admin --host $adminHost --api search --email $u | ConvertFrom-Json).playerid
-    (pdplayer -h (env-alias.js -a $envname) -u $u -verify $playerid).statuscode
-#    exec-sql.ps1 -con ca-pd-dev -sql "$env:USERPROFILE/Documents/Projects/igt/pd\branches/sql/init-casa-12799.sql" | out-null
-#    $adminHost = $envname.split('-')[1]
-#    
-#    $services = pd2-admin --host $adminHost --api services --playerid $playerid | ConvertFrom-Json
-#    $sids = @($services.services[0].serviceId, $services.services[1].serviceId) | sort
-#
-#    pd2-admin --host $adminHost --api services --playerid $playerid --activate --serviceids ("{0},{1}" -f $sids[0], $sids[1])
-#
-#    # $?
-    $playerServices = (pdplayer -h (env-alias.js -a $envname) -u $u -p $p -getattributes).Content|ConvertFrom-Json
+    pdplayer -h (env-alias.js -a $envname) -u $u -verify $playerid | Out-Null
+
+    $playerServices = pdplayer -h (env-alias.js -a $envname) -u $u -p $p -getattributes | ConvertFrom-Json
     Write-Host  (playerServiceToStr $playerServices)
 }
 
@@ -53,7 +45,7 @@ function suspendAccount
 {
     Write-Host "Suspending account ... " -NoNewLine
     (pdplayer -h (env-alias.js -a $envname) -u $u -p $p -lock 'Lock it!').statuscode
-    $playerServices = (pdplayer -h (env-alias.js -a $envname) -u $u -p $p -getattributes).Content|ConvertFrom-Json
+    $playerServices = pdplayer -h (env-alias.js -a $envname) -u $u -p $p -getattributes | ConvertFrom-Json
     Write-Host  (playerServiceToStr $playerServices)
 }
 
@@ -61,7 +53,7 @@ function preactivateAccount
 {
     Write-Host "PREACTIVating account ... " -NoNewLine
     (pdplayer -h (env-alias.js -a $envname) -u $u -p $p -unlock 'Unlock it!').statuscode
-    $playerServices = (pdplayer -h (env-alias.js -a $envname) -u $u -p $p -getattributes).Content|ConvertFrom-Json
+    $playerServices = pdplayer -h (env-alias.js -a $envname) -u $u -p $p -getattributes | ConvertFrom-Json
     Write-Host  (playerServiceToStr $playerServices)
 }
 
@@ -71,9 +63,10 @@ if ( -not($u) ) {showHelp}
 if ( -not($p) ) {showHelp}
 
 Write-Host  "Current state ... " -NoNewLine
-$playerServices = (pdplayer -h (env-alias.js -a $envname) -u $u -p $p -getattributes).Content|ConvertFrom-Json
+$playerServices = pdplayer -h (env-alias.js -a $envname) -u $u -p $p -getattributes | ConvertFrom-Json
 Write-Host  (playerServiceToStr $playerServices)
 
-setAccountToActivatedState
+if ($playerServices.emailVerified -eq $false)
+{ setAccountToActivatedState }
 suspendAccount
 preactivateAccount
