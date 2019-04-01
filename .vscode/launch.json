@@ -7,10 +7,10 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Launch cacatesalotsvc1-b2b.js", "args": [
-              "--proto-host",   "https://sit-draw-mobile.calottery.com"
+            "name": "Launch pd-player-self.js", "args": [
+              "-h", "mobile-cadev1", "-u", "mansir@mailinator.com", "-p", "Password1", "--api", "attributes"
             ],
-            "program": "${workspaceFolder}/cacatesalotsvc1-b2b.js"
+            "program": "${workspaceFolder}/pd-player-self.js"
         }
     ]
 }

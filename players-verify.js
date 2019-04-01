@@ -1,8 +1,8 @@
-var fs = require( "fs" );
-var http = require( "http" );
+var fs = require( "fs" )
+var http = require( "http" )
 const modulesPath = '/usr/share/node_modules/'
 var program = require( modulesPath + 'commander' )
-var peteUtil = require( modulesPath + 'pete-lib/pete-util' )
+var igtCas = require( modulesPath + 'pete-lib/igt-cas' )
 
 program
     .version( '0.0.1' )
@@ -10,25 +10,25 @@ program
     .usage( 'players-verify.js [option] -h <hostname>' )
     .option( '-c, --code code', 'Code' )
     .option( '-h, --hostname <hostname>', 'Hostname' )
-    .parse( process.argv );
+    .parse( process.argv )
 
-var exitValue = 0;
-var code = null;
+var exitValue = 0
+var code = null
 
 if ( !program.hostname )
 {
-    program.help();
-    process.exit( 1 );
+    program.help()
+    process.exit( 1 )
 }
 
 if ( program.code )
 {
-    code = program.code;
+    code = program.code
 }
 else
 {
-    var stdinBuffer = fs.readFileSync( 0 ); // STDIN_FILENO = 0
-    code = stdinBuffer.toString().trim();
+    var stdinBuffer = fs.readFileSync( 0 ) // STDIN_FILENO = 0
+    code = stdinBuffer.toString().trim()
 }
 
 var options =
@@ -37,23 +37,23 @@ var options =
     "hostname": program.hostname,
     "port": null,
     "path": "/api/v1/players/verify/" + code,
-    "headers": lib1.commonHeaders
-};
+    "headers": igtCas.createHeaders( program.hostname )
+}
 
 var req = http.request( options, function ( res )
 {
-    var chunks = [];
+    var chunks = []
 
     res.on( "data", function ( chunk )
     {
-        chunks.push( chunk );
-    } );
+        chunks.push( chunk )
+    } )
 
     res.on( "end", function ()
     {
-        var body = Buffer.concat( chunks );
-        console.log( body.toString() );
-    } );
-} );
+        var body = Buffer.concat( chunks )
+        console.log( body.toString() )
+    } )
+} )
 
-req.end();
+req.end()

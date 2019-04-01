@@ -24,35 +24,35 @@ def formatBarcode( barcode, sep )
     def virn1    = octets[3]
     def virn2    = octets[4]
     def pin      = octets[5]
-    
+
     return "${gameId}${sep}${packId}${sep}${ticketNr}${sep}${virn1}${sep}${virn2}${sep}${pin}"
 }
 
 def parseBarcode( String barcode )
 {
     def octets = []
-    
+
     if ( barcode != null && barcode.length() == 28 )
     {
-    
+
         String gameId = barcode.substring( 0, 5 );
         String packId = barcode.substring( 5, 11 );
         String ticketNr = barcode.substring( 11, 14 );
         String virn1 = barcode.substring( 14, 23 );
         String virn2 = barcode.substring( 23, 24 );
         String pin = barcode.substring( 24 );
-        
+
         octets += gameId
         octets += packId
         octets += ticketNr
         octets += virn1
         octets += virn2
-        octets += pin        
+        octets += pin
     }
     else if ( barcode != null && barcode.length == 28 + 5 ) // 5 '-'
     {
-        octets = barcode.split("-")    
+        octets = barcode.split("-")
     }
-    
+
     return octets
 }
