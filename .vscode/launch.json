@@ -8,7 +8,7 @@
             "type": "node",
             "request": "launch",
             "name": "Launch pd-player-self.js", "args": [
-              "-h", "mobile-cadev1", "-u", "mansir@mailinator.com", "-p", "Password1", "--api", "attributes"
+              "-h", "cslplayerdirect.calottery.com", "-u", "mansir@mailinator.com", "-p", "Password1", "--api", "attributes"
             ],
             "program": "${workspaceFolder}/pd-player-self.js"
         }
