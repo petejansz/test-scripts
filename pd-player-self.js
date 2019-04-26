@@ -18,6 +18,7 @@ program
     .option( '-a, --async', 'Asynchronous mode' )
     .option( '-c, --count [count]', 'Repeat count times' )
     .option( '-h, --hostname <hostname>', 'Hostname' )
+    .option( '-o, --oauth [oauth]', 'OAuth token' )
     .option( '-u, --username <username>', 'Username' )
     .option( '-p, --password <password>', 'Password' )
     .option( '--api <name,...>', 'Names: ' + ALL_API_NAMES, commanderList )
@@ -26,7 +27,12 @@ program
 
 process.exitCode = 1
 
-if ( !program.hostname && !program.username || !program.password )
+if ( !program.hostname )
+{
+    program.help()
+}
+
+if ( !program.username && !program.password && !program.oauth )
 {
     program.help()
 }
@@ -68,17 +74,25 @@ async function main()
 
         var loginRequest = igtCas.createLoginRequest( qualifiedHostname, program.username, program.password )
         axiosInstance = createAxiosInstance( qualifiedHostname )
+        var oauthToken
 
-        // Login for the authCode:
-        var promisedLoginAuthCodeResponse = await axiosInstance.post( '/api/v1/oauth/login', loginRequest )
-        var authCode = promisedLoginAuthCodeResponse.data[0].authCode
-        var oAuthTokensRequest = createOAuthTokensRequest( authCode, loginRequest )
+        if ( !program.oauth )
+        {
+            // Login for the authCode:
+            var promisedLoginAuthCodeResponse = await axiosInstance.post( '/api/v1/oauth/login', loginRequest )
+            var authCode = promisedLoginAuthCodeResponse.data[0].authCode
+            var oAuthTokensRequest = createOAuthTokensRequest( authCode, loginRequest )
 
-        // Submit authCode for the oauthToken:
-        var promisedTokenResponse = await axiosInstance.post( '/api/v1/oauth/self/tokens', oAuthTokensRequest )
-        var mobileToken = promisedTokenResponse.data[0].token
-        var pwsToken = promisedTokenResponse.data[1].token
-        var oauthToken = qualifiedHostname.match( /mobile/ ) ? mobileToken : pwsToken
+            // Submit authCode for the oauthToken:
+            var promisedTokenResponse = await axiosInstance.post( '/api/v1/oauth/self/tokens', oAuthTokensRequest )
+            var mobileToken = promisedTokenResponse.data[0].token
+            var pwsToken = promisedTokenResponse.data[1].token
+            oauthToken = qualifiedHostname.match( /mobile/ ) ? mobileToken : pwsToken
+        }
+        else
+        {
+            oauthToken = program.oauth
+        }
 
         axiosInstance.defaults.headers.common['Authorization'] = "OAuth " + oauthToken
         var objects = {}
