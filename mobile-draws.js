@@ -2,8 +2,7 @@
 
 var http = require( "https" )
 var util = require( "util" )
-const modulesPath = '/usr/share/node_modules/'
-var peteUtil = require( modulesPath + 'pete-lib/pete-util' )
+var peteUtil = require( 'pete-lib/pete-util' )
 
 const PATH = '/api/v2/draw-games/draws'
 var hostnames =

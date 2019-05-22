@@ -1,8 +1,7 @@
 var fs = require( "fs" )
 var http = require( "http" )
-const modulesPath = '/usr/share/node_modules/'
-var program = require( modulesPath + 'commander' )
-var igtCas = require( modulesPath + 'pete-lib/igt-cas' )
+var program = require( 'commander' )
+var igtCas = require( 'pete-lib/igt-cas' )
 
 program
     .version( '0.0.1' )

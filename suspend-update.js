@@ -1,9 +1,8 @@
 // Pete Jansz, Nov 2017
 
-const modulesPath = '/usr/share/node_modules/'
-var ibmdb = require( modulesPath + '/ibm_db' )
-var program = require( modulesPath + 'commander' )
-var peteUtil = require( modulesPath + 'pete-lib/pete-util' )
+var ibmdb = require( 'ibm_db' )
+var program = require( 'commander' )
+var peteUtil = require( 'pete-lib/pete-util' )
 var fs = require( 'fs' )
 var util = require( 'util' )
 

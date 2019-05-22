@@ -3,11 +3,10 @@
   Author: Pete Jansz
 */
 
-const modulesPath = '/usr/share/node_modules/'
-var program = require( modulesPath + 'commander' )
-var igtPdLib = require( modulesPath + 'pete-lib/igt-pd-lib' )
-var igtCas = require( modulesPath + 'pete-lib/igt-cas' )
-const axios = require( modulesPath + 'axios' )
+var program = require( 'commander' )
+var igtPdLib = require( 'pete-lib/igt-pd-lib' )
+var igtCas = require( 'pete-lib/igt-cas' )
+const axios = require( 'axios' )
 const CRM_CORE_HTTP_PORT = 8280
 const BASE_REST_PATH = '/california-adapter/api/v1'
 

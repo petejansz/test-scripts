@@ -2,9 +2,8 @@
  * Author: Pete Jansz
  */
 
-const modulesPath = '/usr/share/node_modules/'
-var request = require( modulesPath + 'request' )
-var program = require( modulesPath + 'commander' )
+var request = require( 'request' )
+var program = require( 'commander' )
 var util = require( 'util' )
 var SITES = { OR: 11 }
 const BC_FORMAT = 'GGGGGPPPPPPTTTVVVVVVVVVCLLLL'

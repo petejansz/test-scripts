@@ -3,10 +3,9 @@
     Pete Jansz
 */
 
-const modulesPath = '/usr/share/node_modules/'
-const axios = require( modulesPath + 'axios' )
-var program = require( modulesPath + 'commander' )
-var igtCas = require( modulesPath + 'pete-lib/igt-cas' )
+const axios = require( 'axios' )
+var program = require( 'commander' )
+var igtCas = require( 'pete-lib/igt-cas' )
 var path = require( 'path' )
 const API_BASE_PATH = '/api/v1/players/self/'
 const ALL_API_NAMES = ['attributes', 'communication-preferences', 'notifications', 'notifications-preferences', 'personal-info', 'profile']
