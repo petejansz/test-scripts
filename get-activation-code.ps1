@@ -11,7 +11,7 @@ param
 $ErrorActionPreference = "stop"
 Set-StrictMode -Version Latest
 $ScriptName = $MyInvocation.MyCommand.Name
-
+$exitCode = 1
 function showHelp()
 {
     Write-Host "Get PD player activation mail activation code"
@@ -22,7 +22,7 @@ function showHelp()
     Write-Host "  -db2password default=${db2password} # Non-dev tunnel: gtkinst1"
     Write-Host "  -db2username default=${db2username} # Non-dev tunnel: gtkinst1"
 
-    exit 1
+    exit $exitCode
 }
 
 if (     $help) { showHelp }
@@ -36,7 +36,11 @@ Set-Content $sqlFile $sql
 $obj = use-ibm-db2.js -f $sqlFile.Fullname -h $db2host --port $port -u $db2username --password $db2password | ConvertFrom-Json
 if ($obj -and $obj.extra_parameters)
 {
-    $obj.extra_parameters.split(';') | ForEach-Object { if ($_ -match "^token=") { $_.split('=')[1] } }
+    $code = $obj.extra_parameters.split(';') | ForEach-Object { if ($_ -match "^token=") { $_.split('=')[1] } }
+    $activationCodeObj = @{ 'id' = $obj.plugin_notification_key; 'code' = $code; }
+    Write-Output $activationCodeObj
+    $exitCode= 0
 }
 
 Remove-Item $sqlFile.Fullname
+exit $exitCode
