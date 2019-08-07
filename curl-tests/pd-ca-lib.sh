@@ -12,7 +12,6 @@ SEC_GW_PORT=8280
 siteId=$CA_SITE_ID
 channelId=$CA_PWS_CHANNEL_ID
 clientId=$CA_PWS_CLIENT_ID
-esaApiKey=DBRDtq3tUERv79ehrheOUiGIrnqxTole
 
 function qualified_cadev_name # ("cadev1|cadev1.gtech.com") : cadev1.gtech.com
 {

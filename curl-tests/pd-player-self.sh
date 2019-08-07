@@ -17,6 +17,8 @@ OAUTH=
 QUIET=false
 HELP=false
 VERBOSE=false
+WAIT=0    # seconds
+DEFAULT_ESA_API_KEY=DBRDtq3tUERv79ehrheOUiGIrnqxTole
 DEFAULT_CURL_OPTS="-o /dev/null -s -w %{http_code}"
 let COUNT=1
 ALL_API_NAMES='attributes communication-preferences notifications notifications-preferences personal-info profile'
@@ -32,6 +34,7 @@ function help()
   echo "  -h | --host     <host>"                                                                 >&2
   echo "       --port     <port>"                                                                 >&2
   echo "  -c | --count    <number (default=1)> Repeat API calls"                                  >&2
+  echo "  -w | --wait     <seconds (default=0)> If count specified, option to wait between calls" >&2
   echo "  -o | --oauth <oauth token>"                                                             >&2
   echo "  -u | --username <username>"                                                             >&2
   echo "  -p | --password <password>"                                                             >&2
@@ -39,10 +42,12 @@ function help()
   echo '  -q | --quiet'                                                                           >&2
   echo "  -v | --verbose"                                                                         >&2
   echo '  -?   --help'                                                                            >&2
+  echo '  ENVIRONMENT:'                                                                           >&2
+  echo "      ESA_API_KEY  default=${DEFAULT_ESA_API_KEY}"                                        >&2
 }
 
 # options parser:
-OPTS=$(getopt -o c:h:o:u:p:qv --long apis:,count:,host:,oauth:,username:,password:,port:,help,siteid:,quiet,verbose -n 'parse-options' -- "$@")
+OPTS=$(getopt -o c:h:w:o:u:p:qv --long apis:,count:,wait:,host:,oauth:,username:,password:,port:,help,siteid:,quiet,verbose -n 'parse-options' -- "$@")
 if [ $? != 0 ]; then
   help
   exit 1
@@ -57,6 +62,7 @@ while true; do
       -o | --oauth    ) OAUTH="$2";     shift; shift ;;
       -p | --password ) PASSWORD="$2";  shift; shift ;;
       -u | --username ) USERNAME="$2";  shift; shift ;;
+      -w | --wait     ) WAIT="$2";      shift; shift ;;
            --apis     ) API_NAMES="$2"; shift; shift ;;
       -q | --quiet    ) QUIET=true;     shift ;;
       -v | --verbose  ) VERBOSE=true;   shift ;;
@@ -91,7 +97,11 @@ function get_players_self() # input-params: FUNCTION_NAME; output-value: JSON_CO
     local CURL_OPTS=$2
 
     if [[ -z "$CURL_OPTS" ]]; then
-      local CURL_OPTS=$DEFAULT_CURL_OPTS #"-o /dev/null -s -w %{http_code}"
+      local CURL_OPTS=$DEFAULT_CURL_OPTS
+    fi
+
+    if [[ -z "$ESA_API_KEY" ]]; then
+      local ESA_API_KEY=$DEFAULT_ESA_API_KEY
     fi
 
     if [[ $VERBOSE == 'true' ]]; then
@@ -106,7 +116,7 @@ function get_players_self() # input-params: FUNCTION_NAME; output-value: JSON_CO
       -H "x-site-id: $siteId"                           \
       -H "x-ex-system-id: $CA_SYSTEM_ID"                \
       -H "x-channel-id: $channelId"                     \
-      -H "x-esa-api-key: ${esaApiKey}"                  \
+      -H "x-esa-api-key: ${ESA_API_KEY}"                \
       -H "x-clientip: $(hostname)"                      \
       -H "authorization: OAuth ${OAUTH}"                \
       -H "x-device-uuid: ${SCRIPT}")
@@ -146,4 +156,5 @@ fi
 while [[ $COUNT -ne 0 ]]; do
   exec_players_self_apis
   let COUNT--
+  sleep $WAIT
 done
