@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 /*
     Axios REST calls to PD player/self APIs, synchronous or async
     Pete Jansz

@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 // Pete Jansz, Nov 2017
 
 var ibmdb = require( 'ibm_db' )

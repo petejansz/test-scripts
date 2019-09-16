@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 /*
   NodeJS command-line interface trigger a winner-notification from the crm-core:8280/california-adapter REST api
   Author: Pete Jansz

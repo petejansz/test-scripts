@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 /**
  * Author: Pete Jansz
  */

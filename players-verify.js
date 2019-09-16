@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 var fs = require( "fs" )
 var http = require( "http" )
 var program = require( 'commander' )
