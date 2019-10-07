@@ -36,7 +36,7 @@ function grepFormat( $obj )
 if (     $help) { showHelp }
 if ( -not($u) ) { showHelp }
 
-$sqlTemplateFile = "$env:Ca/../sql/get-activationmail-activation-code.sql"
+$sqlTemplateFile = "$env:PD_SITE/../sql/get-activationmail-activation-code.sql"
 $defaultUsername = 'mansir@mailinator.com'
 $sql = (Get-Content $sqlTemplateFile) -replace $defaultUsername, $u
 $sqlFile = New-TemporaryFile
