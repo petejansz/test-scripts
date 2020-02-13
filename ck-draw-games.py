@@ -7,6 +7,8 @@ This Python 3 script demonstrates:
 2. Consume (GET) a REST API
 3. print_format {}
 4. Convert long time epoch time to readable format
+
+Author: Pete Jansz, 2019
 """
 
 import argparse, json, requests, sys

@@ -136,7 +136,7 @@ if ( -not($language) ) {showHelp}
 
 $emailFormat = $emailFormat.ToUpper()
 $language = $language.ToUpper()
-$playerid = (pd2-admin --host $adminHost --api search --email $u | ConvertFrom-Json).playerId
+$playerid = (pdadmin --host $adminHost --api search --email $u | ConvertFrom-Json).playerId
 $origEmailFormat = getEmailFormat
 
 if ($origEmailFormat -eq $emailFormat)
