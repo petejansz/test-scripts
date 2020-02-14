@@ -118,7 +118,8 @@ def createArgParser():
     parser.add_argument( '-c', '--count', help='Repeat count times', type=int, default=1 )
     parser.add_argument('-u', '--username', help='Username', required=True, type=str)
     parser.add_argument('-p', '--password', help='Password', required=True, type=str)
-    parser.add_argument('--api', help='API name', type=str)
+    parser.add_argument('--api', help='Names: ' + ','.join(ALL_API_NAMES), type=str)
+    parser.add_argument('-q', '--quiet', help='Shhhh', action='store_true')
     return parser
 
 def validateCliApiList(parser):
@@ -175,14 +176,16 @@ async def main():
 
             objects = []
             for i in range(0, args.count):
-                responses = {}
+                responses = []
                 for api in api_list:
                     resp_dict = await get_players_self(clientSession, endpoint, headers, api)
-                    responses[api] = resp_dict
+                    responses.append( resp_dict )
 
                 objects.append(responses)
 
-            print(json.dumps(objects, indent=4))
+            if not args.quiet:
+                print(json.dumps(objects, indent=4))
+
             exit_value = 0
 
         exit(exit_value)
