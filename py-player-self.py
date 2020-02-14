@@ -174,14 +174,16 @@ async def main():
             else:
                 headers['Authorization'] = 'OAuth ' + pwsToken
 
-            objects = []
+            tasks = []
             for i in range(0, args.count):
-                responses = []
                 for api in api_list:
-                    resp_dict = await get_players_self(clientSession, endpoint, headers, api)
-                    responses.append( resp_dict )
+                    tasks.append( get_players_self(clientSession, endpoint, headers, api) )
 
-                objects.append(responses)
+            responses = await asyncio.gather(*tasks)
+
+            objects = []
+            for resp_dict in responses:
+                objects.append(resp_dict)
 
             if not args.quiet:
                 print(json.dumps(objects, indent=4))
