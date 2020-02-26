@@ -129,7 +129,12 @@ function pd_login() # input-params: $HOST $USERNAME $PASSWORD; output-value: $OA
     local HOST=$1
     local USERNAME=$2
     local PASSWORD=$3
-    local OAUTH_TOKEN=$(oauth-login.sh -h $HOST -u $USERNAME -p $PASSWORD)
+    if [[ $VERBOSE == 'true' ]]; then
+      local OAUTH_TOKEN=$(oauth-login.sh -h $HOST -u $USERNAME -p $PASSWORD --verbose)
+    else
+      local OAUTH_TOKEN=$(oauth-login.sh -h $HOST -u $USERNAME -p $PASSWORD)
+    fi
+
     echo "${OAUTH_TOKEN}"
 }
 

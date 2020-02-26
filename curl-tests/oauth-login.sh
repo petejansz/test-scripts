@@ -14,9 +14,12 @@ PASSWORD=
 # Defaults:
 QUIET=false
 HELP=false
+VERBOSE=false
 PWS_TOKEN_CUT_FLD_NR=16
 MOB_TOKEN_CUT_FLD_NR=6
 TOKEN_CUT_FIELD_NR=$PWS_TOKEN_CUT_FLD_NR
+DEFAULT_CURL_OPTS='-ksX'
+CURL_OPTS=$DEFAULT_CURL_OPTS
 
 function help()
 {
@@ -26,11 +29,12 @@ function help()
   echo "USAGE: $SCRIPT [options] -h <host> -u <username> -p <password>"            >&2
   echo "  options"                                                                 >&2
   echo "       --port     <port>"                                                  >&2
+  echo "  -v | --verbose"                                                          >&2
   echo '  -?   --help'                                                             >&2
 }
 
 # options parser:
-OPTS=$(getopt -o h:u:p: --long host:,username:,password:,port:,help -n 'parse-options' -- "$@")
+OPTS=$(getopt -o h:u:p:v --long host:,username:,password:,port:,help,verbose -n 'parse-options' -- "$@")
 if [ $? != 0 ]; then
   help
   exit 1
@@ -43,6 +47,7 @@ while true; do
            --port     ) PORT="$2";     shift; shift ;;
       -p | --password ) PASSWORD="$2"; shift; shift ;;
       -u | --username ) USERNAME="$2"; shift; shift ;;
+      -v | --verbose  ) VERBOSE=true;  shift ;;
            --help     ) HELP=true;     shift ;;
       -- )                             shift; break ;;
        * )                             break ;;
@@ -54,6 +59,10 @@ if [[ "$HELP" == 'true' || -z "$HOST" || -z "$USERNAME" || -z "$PASSWORD" ]]; th
   exit 1
 fi
 
+  if [[ $VERBOSE == 'true' ]]; then
+      CURL_OPTS="-v ${CURL_OPTS}"
+  fi
+
 if [[ $HOST =~ "mobile" ]]; then
     channelId=$CA_MOBILE_CHANNEL_ID
     clientId=$CA_MOBILE_CLIENT_ID
@@ -63,7 +72,7 @@ fi
 BASE_URI=$(create_base_uri $HOST $PORT)
 RESOURCE_CREDS="\"resourceOwnerCredentials\": {\"USERNAME\":\"${USERNAME}\", \"PASSWORD\":\"${PASSWORD}\"}"
 
-RESP=$(curl -ksX POST \
+RESP=$(curl ${CURL_OPTS} POST \
   "${BASE_URI}/api/v1/oauth/login"       \
   -H 'cache-control: no-cache'                      \
   -H 'content-type: application/json'               \
@@ -87,7 +96,7 @@ if [[ -z "${AUTH_CODE}" ]]; then
     exit 1
 fi
 
-TOKENS_RESP=$(curl -ksX POST \
+TOKENS_RESP=$(curl ${CURL_OPTS} POST \
   "${BASE_URI}/api/v1/oauth/self/tokens" \
   -H 'cache-control: no-cache'                      \
   -H 'content-type: application/json'               \
