@@ -12,6 +12,7 @@ import aiohttp
 import asyncio
 import argparse
 import json
+import sys
 
 API_BASE_PATH = '/api/v1/players/self/'
 ALL_API_NAMES = [
@@ -161,12 +162,28 @@ async def main():
     async with aiohttp.ClientSession(headers=headers) as clientSession:
 
         # Login, get token set headers['Authorization']:
-        resp_dict = await loginForAuthCode(clientSession, endpoint, creds)
+        resp_dict = {}
+        try:
+           resp_dict = await loginForAuthCode(clientSession, endpoint, creds)
+        except Exception as e:
+            print(e, file=sys.stderr)
+            exit(exit_value)
+
+        if len(resp_dict) == 3 and resp_dict.get('code') == 'NOT_AUTHENTICATED':
+            print('401: NOT_AUTHENTICATED', file=sys.stderr)
+            exit(exit_value)
+
         if len(resp_dict) == 1 and resp_dict[0].get('authCode') != None:
             authCode = resp_dict[0].get('authCode')
             loginRequest = createLoginRequest(endpoint, creds)
-            resp_dict = await getOAuthTokens(clientSession, endpoint, authCode, loginRequest)
             mobileToken = resp_dict[0].get('token')
+
+            try:
+                resp_dict = await getOAuthTokens(clientSession, endpoint, authCode, loginRequest)
+            except Exception as e:
+                print(e, file=sys.stderr)
+                exit(exit_value)
+
             pwsToken = resp_dict[1].get('token')
 
             if endpoint.get('hostname').count('mobile') > 0:
