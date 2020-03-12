@@ -5,6 +5,18 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "args":
+            [
+                "--hostname", "cadev1", "-u", "mansir@mailinator.com", "-p", "Password1", "--api", "attributes"
+            ]
+        },
+        {
             "type": "node",
             "request": "launch",
             "name": "Launch pd-player-self.js", "args": [
