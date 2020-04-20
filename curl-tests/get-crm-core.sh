@@ -83,13 +83,13 @@ fi
 
 function get_ca_adapter_api()
 {
-  local CURL_OPTS='-is'
+  local CURL_OPTS='-isX'
 
   if [[ $VERBOSE == 'true' ]]; then
       CURL_OPTS="-v ${CURL_OPTS}"
   fi
 
-  RESP=$( curl $CURL_OPTS "http://${HOST}:8280/california-adapter/api/v1/players/self/${API_NAME}" \
+  RESP=$( curl $CURL_OPTS GET "http://${HOST}:8280/california-adapter/api/v1/players/self/${API_NAME}" \
   -H 'cache-control: no-cache'                                                                     \
   -H 'content-type: application/json'                                                              \
   -H 'connection: keep-alive'                                                                      \
@@ -102,23 +102,49 @@ function get_ca_adapter_api()
   echo $RESP
 }
 
+function get_body()
+{
+  local RESP=$1
+  for line in $(echo $RESP); do
+    if [[ $line =~ '{' ]]; then
+      BODY=$( echo $line | sed 's/^ //g' )
+      break
+    fi
+  done
+
+  echo $BODY
+}
+
+EXIT_CODE=1
+
 while [[ $COUNT -ne 0 ]]; do
   RESPONSE=$( get_ca_adapter_api )
   STATUS_CODE=$( echo "${RESPONSE}" | awk '/^HTTP/{print $2}')
-  BODY=$( echo "${RESPONSE}" | awk '/\{.*\}/{print $0}' )
-  EXIT_CODE=1
+  for line in $RESPONSE; do
+    if [[ $line =~ '{' ]]; then
+      BODY=$( echo $line | sed 's/^ //g' )
+      break
+    fi
+  done
 
   if  [ $STATUS_CODE == '200' ]; then
     EXIT_CODE=0
+  else
+    EXIT_CODE=1
   fi
 
   if [ $QUIET == 'false' ]; then
-    echo $STATUS_CODE
-    echo $BODY
+    echo "$STATUS_CODE/${BODY}"
   fi
 
-  exit $EXIT_CODE
+  if [ $EXIT_CODE == 1 ]; then
+    break
+  fi
 
   let COUNT--
   sleep $WAIT
 done
+
+exit $EXIT_CODE
+
+
