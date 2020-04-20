@@ -102,24 +102,13 @@ function get_ca_adapter_api()
   echo $RESP
 }
 
-function get_body()
-{
-  local RESP=$1
-  for line in $(echo $RESP); do
-    if [[ $line =~ '{' ]]; then
-      BODY=$( echo $line | sed 's/^ //g' )
-      break
-    fi
-  done
-
-  echo $BODY
-}
-
 EXIT_CODE=1
 
 while [[ $COUNT -ne 0 ]]; do
   RESPONSE=$( get_ca_adapter_api )
   STATUS_CODE=$( echo "${RESPONSE}" | awk '/^HTTP/{print $2}')
+
+  # Find body in response:
   for line in $RESPONSE; do
     if [[ $line =~ '{' ]]; then
       BODY=$( echo $line | sed 's/^ //g' )
