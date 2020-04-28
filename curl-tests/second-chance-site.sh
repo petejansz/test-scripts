@@ -1,4 +1,4 @@
-curl -X GET \
+curl -sX GET \
   https://player.calottery.com/api/v1/second-chance/site \
   -H 'cache-control: no-cache' \
   -H 'content-type: application/json' \

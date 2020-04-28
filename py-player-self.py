@@ -11,7 +11,9 @@ Author: Pete Jansz, 2020
 import aiohttp
 import asyncio
 import argparse
+import io
 import json
+import os
 import sys
 
 API_BASE_PATH = '/api/v1/players/self/'
@@ -115,12 +117,15 @@ def createLoginRequest(endpoint, creds):
 
 def createArgParser():
     parser = argparse.ArgumentParser(description='Python 3.7+ PD API client')
-    parser.add_argument('--hostname', help='Hostname', required=True, type=str)
-    parser.add_argument( '-c', '--count', help='Repeat count times', type=int, default=1 )
-    parser.add_argument('-u', '--username', help='Username', required=True, type=str)
-    parser.add_argument('-p', '--password', help='Password', required=True, type=str)
     parser.add_argument('--api', help='Names: ' + ','.join(ALL_API_NAMES), type=str)
+    parser.add_argument('-c', '--count', help='Repeat count times', type=int, default=1)
+    parser.add_argument('--hostname', help='Hostname', required=True, type=str)
+    parser.add_argument('-o', '--oauth', help='OAuth session token', required=False, type=str)
+    parser.add_argument('-p', '--password', help='Password', required=False, type=str)
     parser.add_argument('-q', '--quiet', help='Shhhh', action='store_true')
+    parser.add_argument('--reg', help='Register new user', required=False, type=str)
+    parser.add_argument('-u', '--username', help='Username',
+                        required=False, type=str)
     return parser
 
 def validateCliApiList(parser):
@@ -139,17 +144,28 @@ def validateCliApiList(parser):
 
     return api_list
 
+
+def read_regjson(json_file):
+    with open(json_file, 'r') as f:
+        return json.load(f)
+
 async def main():
     exit_value = 1
 
     parser = createArgParser()
     args = parser.parse_args()
 
-    if args.hostname == None or args.username == None:
+    if args.hostname == None:
         parser.print_help()
         exit(exit_value)
 
-    api_list = validateCliApiList(parser)
+    if args.username == None and args.password == None and args.oauth == None:
+        parser.print_help()
+        exit(exit_value)
+
+    api_list = []
+    if args.reg == None:
+        api_list = validateCliApiList(parser)
 
     proto = 'https://'
     if args.hostname.find('dev') > 0:
@@ -163,49 +179,52 @@ async def main():
 
         # Login, get token set headers['Authorization']:
         resp_dict = {}
-        try:
-           resp_dict = await loginForAuthCode(clientSession, endpoint, creds)
-        except Exception as e:
-            print(e, file=sys.stderr)
-            exit(exit_value)
-
-        if len(resp_dict) == 3 and resp_dict.get('code') == 'NOT_AUTHENTICATED':
-            print('401: NOT_AUTHENTICATED', file=sys.stderr)
-            exit(exit_value)
-
-        if len(resp_dict) == 1 and resp_dict[0].get('authCode') != None:
-            authCode = resp_dict[0].get('authCode')
-            loginRequest = createLoginRequest(endpoint, creds)
-            mobileToken = resp_dict[0].get('token')
-
+        oauth_token = None
+        if args.username and args.password:
             try:
-                resp_dict = await getOAuthTokens(clientSession, endpoint, authCode, loginRequest)
+               resp_dict = await loginForAuthCode(clientSession, endpoint, creds)
             except Exception as e:
                 print(e, file=sys.stderr)
                 exit(exit_value)
 
-            pwsToken = resp_dict[1].get('token')
+            if len(resp_dict) == 3 and resp_dict.get('code') == 'NOT_AUTHENTICATED':
+                print('401: NOT_AUTHENTICATED', file=sys.stderr)
+                exit(exit_value)
 
-            if endpoint.get('hostname').count('mobile') > 0:
-                headers['Authorization'] = 'OAuth ' + mobileToken
-            else:
-                headers['Authorization'] = 'OAuth ' + pwsToken
+            if len(resp_dict) == 1 and resp_dict[0].get('authCode') != None:
+                authCode = resp_dict[0].get('authCode')
+                loginRequest = createLoginRequest(endpoint, creds)
 
-            tasks = []
-            for i in range(0, args.count):
-                for api in api_list:
-                    tasks.append( get_players_self(clientSession, endpoint, headers, api) )
+                try:
+                    resp_dict = await getOAuthTokens(clientSession, endpoint, authCode, loginRequest)
+                    if endpoint.get('hostname').count('mobile') > 0:
+                        oauth_token = resp_dict[0].get('token')
+                    else:
+                        oauth_token = resp_dict[1].get('token')
+                except Exception as e:
+                    print(e, file=sys.stderr)
+                    exit(exit_value)
 
-            responses = await asyncio.gather(*tasks)
+        elif args.oauth:
+            oauth_token = args.oauth
 
-            objects = []
-            for resp_dict in responses:
-                objects.append(resp_dict)
+        headers['Authorization'] = 'OAuth ' + oauth_token
 
-            if not args.quiet:
-                print(json.dumps(objects, indent=4))
+        tasks = []
+        for i in range(0, args.count):
+            for api in api_list:
+                tasks.append( get_players_self(clientSession, endpoint, headers, api) )
 
-            exit_value = 0
+        responses = await asyncio.gather(*tasks)
+
+        objects = []
+        for resp_dict in responses:
+            objects.append(resp_dict)
+
+        if not args.quiet:
+            print(json.dumps(objects, indent=4))
+
+        exit_value = 0
 
         exit(exit_value)
 

@@ -12,6 +12,7 @@ HOST=
 USERNAME=
 PASSWORD=
 OAUTH=
+AVAILABLE=
 
 # Defaults:
 QUIET=false
@@ -34,6 +35,7 @@ function help()
   echo "  -h | --host     <host>"                                                                 >&2
   echo "       --port     <port>"                                                                 >&2
   echo "  -c | --count    <number (default=1)> Repeat API calls"                                  >&2
+  echo "       --available <username>"                                                            >&2
   echo "  -w | --wait     <seconds (default=0)> If count specified, option to wait between calls" >&2
   echo "  -o | --oauth <oauth token>"                                                             >&2
   echo "  -u | --username <username>"                                                             >&2
@@ -47,7 +49,8 @@ function help()
 }
 
 # options parser:
-OPTS=$(getopt -o c:h:w:o:u:p:qv --long apis:,count:,wait:,host:,oauth:,username:,password:,port:,help,siteid:,quiet,verbose -n 'parse-options' -- "$@")
+OPTS=$(getopt -o c:h:w:o:u:p:qv --long apis:,count:,wait:,host:,oauth:,username:,password:,port:,available:,help,siteid:,quiet,verbose -n 'parse-options' -- "$@")
+
 if [ $? != 0 ]; then
   help
   exit 1
@@ -59,6 +62,7 @@ while true; do
       -h | --host     ) HOST="$2";      shift; shift ;;
            --port     ) PORT="$2";      shift; shift ;;
       -c | --count    ) COUNT="$2";     shift; shift ;;
+           --available ) AVAILABLE="$2" shift; shift ;;
       -o | --oauth    ) OAUTH="$2";     shift; shift ;;
       -p | --password ) PASSWORD="$2";  shift; shift ;;
       -u | --username ) USERNAME="$2";  shift; shift ;;
@@ -77,7 +81,7 @@ if [[ "$HELP" == 'true' || -z "$HOST" ]]; then
   exit 1
 fi
 
-if [[ -z "$OAUTH" && -z "$USERNAME" && -z "$PASSWORD" ]]; then
+if [[ -z "$OAUTH" && -z "$USERNAME" && -z "$PASSWORD"  && -z "$AVAILABLE" ]]; then
   help
   exit 1
 fi
@@ -87,9 +91,33 @@ if [[ $HOST =~ "mobile" ]]; then
     clientId=$CA_MOBILE_CLIENT_ID
 fi
 
-if [[ -z "$API_NAMES" ]]; then
+if [[ -z "$API_NAMES" && -z "$AVAILABLE" ]]; then
     API_NAMES=$ALL_API_NAMES
 fi
+
+function is_available()
+{
+    local CURL_OPTS=$1
+
+    if [[ -z "$CURL_OPTS" ]]; then
+      local CURL_OPTS=$DEFAULT_CURL_OPTS
+    fi
+
+    if [[ -z "$ESA_API_KEY" ]]; then
+      local ESA_API_KEY=$DEFAULT_ESA_API_KEY
+    fi
+
+    if [[ $VERBOSE == 'true' ]]; then
+        CURL_OPTS="-v ${CURL_OPTS}"
+    fi
+
+    BASE_URI=$(create_base_uri $HOST $PORT)
+    RESP=$(curl -s "${BASE_URI}/api/v1/players/available/${AVAILABLE}" \
+      -H "x-ex-system-id: $CA_SYSTEM_ID"                \
+      -H "x-channel-id: $channelId" )
+
+    echo $RESP
+}
 
 function get_players_self() # input-params: FUNCTION_NAME; output-value: JSON_CONTENT
 {
@@ -153,6 +181,12 @@ function exec_players_self_apis()
         fi
     done
 }
+
+if [ ! -z ${AVAILABLE+x} ]; then
+  RESP=$( is_available )
+  echo $RESP
+  exit
+fi
 
 if [[ -z "$OAUTH" ]]; then
     OAUTH=$(pd_login $HOST $USERNAME $PASSWORD)
