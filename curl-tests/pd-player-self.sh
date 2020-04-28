@@ -30,10 +30,10 @@ function help()
   echo "Login, get oauth token, make GET calls to API-names:"                                     >&2
   echo "  $ALL_API_NAMES"                                                                         >&2
   echo                                                                                            >&2
-  echo "USAGE: $(basename $0) [options] -h <host> -u <username> -p <password> | -o <oauth token>" >&2
+  echo "USAGE: $(basename $0) [options] -h <host> -u <username> -p <password> | -o <oauth token> | --available <username>" >&2
   echo "  options"                                                                                >&2
-  echo "  -h | --host     <host>"                                                                 >&2
-  echo "       --port     <port>"                                                                 >&2
+  echo "  -h | --host     <host>  To talk directly to sec-gateway use IP-address as host"         >&2
+  echo "       --port     <port>  When host is an IP-address, port is set to sec-gateway 8280"    >&2
   echo "  -c | --count    <number (default=1)> Repeat API calls"                                  >&2
   echo "       --available <username>"                                                            >&2
   echo "  -w | --wait     <seconds (default=0)> If count specified, option to wait between calls" >&2
