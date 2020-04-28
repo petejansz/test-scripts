@@ -182,7 +182,7 @@ function exec_players_self_apis()
     done
 }
 
-if [ ! -z ${AVAILABLE+x} ]; then
+if [[ ! -z "$AVAILABLE" ]]; then
   RESP=$( is_available )
   echo $RESP
   exit
