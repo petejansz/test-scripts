@@ -182,18 +182,20 @@ function exec_players_self_apis()
     done
 }
 
-if [[ ! -z "$AVAILABLE" ]]; then
-  RESP=$( is_available )
-  echo $RESP
-  exit
-fi
-
-if [[ -z "$OAUTH" ]]; then
+if [[ -z "$OAUTH" && -z "$AVAILABLE" ]]; then
     OAUTH=$(pd_login $HOST $USERNAME $PASSWORD)
 fi
 
 while [[ $COUNT -ne 0 ]]; do
-  exec_players_self_apis
+  if [[ -n "$OAUTH" ]]; then
+    exec_players_self_apis
+  fi
+
+  if [[ -n "$AVAILABLE" ]]; then
+    RESP=$( is_available )
+    echo $RESP
+  fi
+
   let COUNT--
   sleep $WAIT
 done
