@@ -1,15 +1,48 @@
-#
+# Purpose: Decode, parse, webcode ('##MRDGZYLYWXJ') into draw-ticket, barcode (10231000003000095990457111) into instant-ticket.
+# Example output:
+    # {
+    #   "10231000003000095990457111": {
+    #     "gameId": "1023",
+    #     "packId": "1000003",
+    #     "ticketId": "000",
+    #     "virn1": "095990457",
+    #     "virn2": "1",
+    #     "checkNumber": "1",
+    #     "pin": 0
+    #   }
+    # }
+    # {
+    #   "##MRDGZYLYWXJ": {
+    #     "webcode": "##MRDGZYLYWXJ",
+    #     "productNumber": 15,
+    #     "cdc": 915,
+    #     "serialNumber": 9198867
+    #   }
+    # }
+
+# Dependancies:
+#   Python 2.6 or 3+
+#   CLASSPATH to esa-b2b-translets.jar or /usr/share/java/cas-esa-b2b-translet-4.4.0.1.jar or compiled classes
+#       ~/Documents/Projects/igt/esa/b2b/branches/cas-b2b_r4_0_dev_br/cas-esa-b2b-translet/target/classes
+#   Java
 # Author: Pete Jansz
 # Date: 2020-04-30
 
 from subprocess import Popen, PIPE
 import re, sys, string, os.path, io, subprocess
-from datetime import date
+from datetime import date, timedelta
 import io
 import json
 from optparse import OptionParser
 
+CDC1 = '1986.01.01'
 parser = OptionParser()
+
+def convertCdcToDateStr(cdc):
+    year, month, day = CDC1.split('.')
+    cdc1 = date( int(year), int(month), int(day) )
+    delta = timedelta( days=cdc )
+    return ( str(cdc1 + delta) )
 
 def decode(webcode):
     '''
@@ -19,7 +52,7 @@ def decode(webcode):
     CLASSNAME = 'cas.gtech.translets.WebcodeDecoder'
     classpath = None
 
-    if os.environ.get('CLASSPATH') and os.environ['CLASSPATH'].count('cas-esa-b2b-translet') != 0:
+    if os.environ.get('CLASSPATH') and os.environ['CLASSPATH'].count('esa-b2b-translet') != 0:
         classpath = os.environ.get('CLASSPATH')
     else:
         classpath = os.environ['USERPROFILE'] + \
@@ -141,6 +174,7 @@ class DrawTicket(object):
             'webcode': self.webcode,
             'productNumber': self.productNumber,
             'cdc': self.cdc,
+            'date': convertCdcToDateStr(self.cdc),
             'serialNumber': self.serialNumber
         }
 
