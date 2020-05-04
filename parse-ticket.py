@@ -1,24 +1,22 @@
 # Purpose: Decode, parse, webcode ('##MRDGZYLYWXJ') into draw-ticket, barcode (10231000003000095990457111) into instant-ticket.
 # Example output:
-    # {
-    #   "10231000003000095990457111": {
-    #     "gameId": "1023",
-    #     "packId": "1000003",
-    #     "ticketId": "000",
-    #     "virn1": "095990457",
-    #     "virn2": "1",
-    #     "checkNumber": "1",
-    #     "pin": 0
-    #   }
-    # }
-    # {
-    #   "##MRDGZYLYWXJ": {
-    #     "webcode": "##MRDGZYLYWXJ",
-    #     "productNumber": 15,
-    #     "cdc": 915,
-    #     "serialNumber": 9198867
-    #   }
-    # }
+# {
+    # "barcode": 10231000003000095990457111,
+    # "gameId": 1023,
+    # "packId": 1000003,
+    # "ticketId": 0,
+    # "virn1": 95990457,
+    # "virn2": 1,
+    # "checkNumber": 1,
+    # "pin": 0
+# }
+#   {
+#     "webcode": "##MRDGZYLYWXJ",
+#     "serialNumber": 9198867,
+#     "productNumber": 15,
+#     "cdc": 915,
+#     "date": "1988-07-04"
+#   },
 
 # Dependancies:
 #   Python 2.6 or 3+
@@ -28,11 +26,13 @@
 # Author: Pete Jansz
 # Date: 2020-04-30
 
+from abc import abstractmethod, ABCMeta
 from subprocess import Popen, PIPE
 import re, sys, string, os.path, io, subprocess
 from datetime import date, timedelta
 import io
 import json
+from json import JSONEncoder
 from optparse import OptionParser
 
 CDC1 = '1986.01.01'
@@ -83,19 +83,37 @@ def decode(webcode):
 
     return draw_ticket
 
-class InstantTicket(object):
+class AbstractTicket(object):
+    __metaclass__ = ABCMeta
+
+    @classmethod
+    @abstractmethod
+    def create_csv_header(cls):
+        raise NotImplementedError
+
+    @classmethod
+    @abstractmethod
+    def to_csv(cls):
+        raise NotImplementedError
+
+    @classmethod
+    @abstractmethod
+    def to_dict(cls):
+        raise NotImplementedError
+
+class InstantTicket(AbstractTicket):
     __BARCODE_IG_PDF417_LENGTH = 27
 
     def __init__(self, barcode):
         super(InstantTicket, self).__init__()
 
         if barcode.isdigit() and len( barcode ) >= self.__BARCODE_IG_PDF417_LENGTH-1:
-            self.__barcode = barcode
-            self.__gameId = barcode[ 0 : 4 ]
-            self.__packId = barcode[ 4 : 11 ]
-            self.__ticketId = barcode[ 11 : 14 ]
-            self.__virn1 = barcode[ 14 : 23 ]
-            self.__checkNumber = barcode[23]
+            self.__barcode = int(barcode)
+            self.__gameId = int(barcode[ 0 : 4 ])
+            self.__packId = int(barcode[ 4 : 11 ])
+            self.__ticketId = int(barcode[ 11 : 14 ])
+            self.__virn1 = int(barcode[ 14 : 23 ])
+            self.__checkNumber = int(barcode[23])
             self.__virn2 = self.__checkNumber
             self.__pin = 0
         else:
@@ -110,6 +128,7 @@ class InstantTicket(object):
 
     def to_dict(self):
         return {
+            'barcode': self.__barcode,
             'gameId': self.__gameId,
             'packId': self.__packId,
             'ticketId': self.__ticketId,
@@ -119,11 +138,34 @@ class InstantTicket(object):
             'pin': self.__pin
         }
 
-    def __str__(self):
-        format = 'gameId=%s, packId=%s, ticketId=%s, virn1=%s, virn2=%s, checkNumber=%s, pin=%s'
-        return format % ( self.__gameId, self.__packId, self.__ticketId, self.__virn1, self.__virn2, self.__checkNumber, self.__pin )
+    def create_csv_header(self):
+        return 'barcode,gameId,packId,ticketId,virn1,virn2,checkNumber,pin'
 
-class DrawTicket(object):
+    def to_csv(self):
+        format = '%s,%s,%s,%s,%s,%s,%s,%s'
+        return format % (
+            self.__barcode,
+            self.__gameId,
+            self.__packId,
+            self.__ticketId,
+            self.__virn1,
+            self.__virn2,
+            self.__checkNumber,
+            self.__pin )
+
+    def __str__(self):
+        format = 'barcode=%s, gameId=%s, packId=%s, ticketId=%s, virn1=%s, virn2=%s, checkNumber=%s, pin=%s'
+        return format % (
+            self.__barcode,
+            self.__gameId,
+            self.__packId,
+            self.__ticketId,
+            self.__virn1,
+            self.__virn2,
+            self.__checkNumber,
+            self.__pin )
+
+class DrawTicket(AbstractTicket):
     __WEBCODE_LENGTH = 13
 
     def __init__(self, webcode, product_number, cdc, serial_number):
@@ -172,20 +214,50 @@ class DrawTicket(object):
     def to_dict(self):
         return {
             'webcode': self.webcode,
+            'serialNumber': self.serialNumber,
             'productNumber': self.productNumber,
             'cdc': self.cdc,
-            'date': convertCdcToDateStr(self.cdc),
-            'serialNumber': self.serialNumber
+            'date': convertCdcToDateStr(self.cdc)
         }
 
+    def create_csv_header(self):
+        return 'webcode,serialNumber,productNumber,cdc,date'
+
+    def to_csv(self):
+        format = '%s,%s,%s,%s,%s'
+        return format % (self.webcode, str(self.serialNumber), str(self.productNumber), (str(self.cdc)), convertCdcToDateStr(self.cdc))
+
     def __str__(self):
-        format = 'webcode=%s, productNumber=%s, cdc=%s, serialNumber=%s'
-        return format % (self.webcode, str(self.productNumber), (str(self.cdc)), str(self.serialNumber))
+        format = 'webcode=%s, serialNumber=%s, productNumber=%s, cdc=%s, date=%s'
+        return format % (self.webcode, str(self.serialNumber), str(self.productNumber), (str(self.cdc)), convertCdcToDateStr(self.cdc))
+
+def output_json(tickets):
+    list = []
+    for ticket in tickets.values():
+        list.append(ticket.to_dict())
+
+    print(json.dumps(list, indent=2))
+
+def output_csv(tickets):
+    count = 0
+    for ticket in tickets.values():
+        if count == 0:
+            print (ticket.create_csv_header())
+            count += 1
+        print ( ticket.to_csv() )
 
 def parse_cli_args():
-    parser.add_option('-t', '--tickets', action='append', help='Instant barcode or draw webcode',
-                      dest='tickets')
+    parser.description='Decode ticket draw webcode (##MRDGZYLYWXJ), barcode (10231000003000095990457111) into human-readable form.'
+    parser.add_option('-t', '--tickets', action='append', help='Instant barcode or draw webcode', type='string', dest='tickets')
+    parser.add_option('-f', '--format', action='store', help='Format: json, csv', type='string', dest='format', default='json')
     return parser.parse_args()
+
+def present_results(tickets, options):
+    if len(tickets.values()) > 0:
+        if options.format == 'json':
+            output_json(tickets)
+        elif options.format == 'csv':
+            output_csv(tickets)
 
 def main():
     exit_value = 1
@@ -195,29 +267,28 @@ def main():
         sys.exit(exit_value)
 
     try:
-        instant_tickets = {}
-        draw_tickets = {}
+        tickets = {}
+        draw_ticket_count = 0
+        instant_ticket_count = 0
 
         for ticket in options.tickets:
+            if draw_ticket_count and instant_ticket_count:
+                raise ValueError('Cannot mix draw, instant tickets.')
             if ticket and ticket.isdigit() and len(ticket) >= InstantTicket.BarcodeMinLength():
+                instant_ticket_count += 1
                 barcode = ticket
-                instant_ticket = InstantTicket(barcode)
-                instant_tickets[ticket] = instant_ticket.to_dict()
+                tickets[barcode] = InstantTicket(barcode)
                 exit_value = 0
             elif ticket and len(ticket) == DrawTicket.WebcodeLength():
                 webcode = ticket
+                draw_ticket_count += 1
                 draw_ticket = decode(webcode)
-                draw_tickets[webcode] = draw_ticket.to_dict()
+                tickets[draw_ticket.serialNumber] = draw_ticket
                 exit_value = 0
             else:
                 parser.print_help()
 
-        # Present results
-        if len(instant_tickets.keys()):
-            print(json.dumps(instant_tickets, ensure_ascii=True, indent=2))
-
-        if len(draw_tickets.keys()):
-            print(json.dumps(draw_tickets, ensure_ascii=True, indent=2))
+        present_results(tickets, options)
 
     except Exception as error:
         errtype, value, traceback = sys.exc_info()
