@@ -4,7 +4,8 @@
 #     VALID_CRM_ADAPTER_API_NAMES=(communication-preferences notifications notifications-preferences personal-info profile)
 #   Pete Jansz, IGT, 2020-04-15
 
-. pd-ca-lib.sh
+EXECUTING_DIR=$( dirname $(readlink -f $0 ))
+. $EXECUTING_DIR/pd-ca-lib.sh
 
 SCRIPT=$(basename $0)
 HOST=
@@ -108,25 +109,26 @@ while [[ $COUNT -ne 0 ]]; do
   RESPONSE=$( get_ca_adapter_api )
   STATUS_CODE=$( echo "${RESPONSE}" | awk '/^HTTP/{print $2}')
 
+  BODY=''
   # Find body in response:
   for line in $RESPONSE; do
-    if [[ $line =~ '{' ]]; then
-      BODY=$( echo $line | sed 's/^ //g' )
-      break
+    if [[ $line =~ '{' ]] || [[ $line =~ '}' ]]; then
+      S=$( echo $line | sed 's/^ //g' )
+      BODY="${BODY}${S}"
     fi
   done
 
-  if  [ $STATUS_CODE == '200' ]; then
+  if  [[ $STATUS_CODE == '200' ]]; then
     EXIT_CODE=0
   else
     EXIT_CODE=1
   fi
 
-  if [ $QUIET == 'false' ]; then
+  if [[ $QUIET == 'false' ]]; then
     echo "$STATUS_CODE/${BODY}"
   fi
 
-  if [ $EXIT_CODE == 1 ]; then
+  if [[ $EXIT_CODE == 1 ]]; then
     break
   fi
 
@@ -135,5 +137,3 @@ while [[ $COUNT -ne 0 ]]; do
 done
 
 exit $EXIT_CODE
-
-
