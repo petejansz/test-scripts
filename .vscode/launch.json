@@ -11,16 +11,26 @@
             "program": "${file}",
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal",
-            "args":
-            [
-                "--hostname", "cadev1", "-u", "mansir@mailinator.com", "-p", "Password1", "--api", "attributes"
+            "args": [
+                 "-f", "json",
+                // "-t", "10231000003000095990457111",
+                // "-t", "10231000003000095990457222",
+                 "-t", "##MRDGZYLYWXJ", "-t", "##P&FCS&HYRMB"
             ]
         },
         {
             "type": "node",
             "request": "launch",
-            "name": "Launch pd-player-self.js", "args": [
-              "-h", "cslplayerdirect.calottery.com", "-u", "mansir@mailinator.com", "-p", "Password1", "--api", "attributes"
+            "name": "Launch pd-player-self.js",
+            "args": [
+                "-h",
+                "cslplayerdirect.calottery.com",
+                "-u",
+                "mansir@mailinator.com",
+                "-p",
+                "Password1",
+                "--api",
+                "attributes"
             ],
             "program": "${workspaceFolder}/pd-player-self.js"
         }

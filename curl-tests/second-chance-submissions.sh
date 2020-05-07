@@ -3,7 +3,6 @@ curl -X GET \
   -H 'authorization: OAuth pQ-Fi9RKHNUEh-PC1s2g4A' \
   -H 'cache-control: no-cache' \
   -H 'content-type: application/json' \
-  -H 'postman-token: 73578267-f619-d87a-a223-f140f5973e9e' \
   -H 'x-channel-id: 3' \
   -H 'x-device-uuid: 1234-5678-abcd-efgh' \
   -H 'x-esa-api-key: DBRDtq3tUERv79ehrheOUiGIrnqxTole' \

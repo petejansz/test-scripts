@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+//#!/usr/bin/env node
 
 // Test GET /api/v2/draw-games/draws against hostnames
 

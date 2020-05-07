@@ -20,7 +20,6 @@ function showHelp()
 
 if ($h -or $help -or (-not($caDrawTicket))) {showHelp}
 
-#cd "$env:USERPROFILE\Documents\Projects\igt\esa\b2b\branches\cas-b2b_r4_0_dev_br\cas-esa-b2b-translet"
-$classPath = "$env:USERPROFILE\Documents\Projects\igt\esa\b2b\branches\cas-b2b_r4_0_dev_br\cas-esa-b2b-translet\target\classes"
+$classPath = "$env:USERPROFILE/Documents/Projects/igt/esa/b2b/branches/cas-b2b_r4_0_dev_br/cas-esa-b2b-translet/target/classes"
 # mvn test
 java -cp $classPath cas.gtech.translets.WebcodeDecoder $caDrawTicket
