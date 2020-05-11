@@ -5,7 +5,8 @@
 #     'attributes' 'personal-info' 'profile' 'notifications-preferences' 'communication-preferences
 #   Pete Jansz, IGT, 2018-11-10
 
-. pd-ca-lib.sh
+EXECUTING_DIR=$( dirname $(readlink -f $0 ))
+. $EXECUTING_DIR/pd-ca-lib.sh
 
 SCRIPT=$(basename $0)
 HOST=
@@ -158,9 +159,9 @@ function pd_login() # input-params: $HOST $USERNAME $PASSWORD; output-value: $OA
     local USERNAME=$2
     local PASSWORD=$3
     if [[ $VERBOSE == 'true' ]]; then
-      local OAUTH_TOKEN=$(oauth-login.sh -h $HOST -u $USERNAME -p $PASSWORD --verbose)
+      local OAUTH_TOKEN=$( $EXECUTING_DIR/oauth-login.sh -h $HOST -u $USERNAME -p $PASSWORD --verbose )
     else
-      local OAUTH_TOKEN=$(oauth-login.sh -h $HOST -u $USERNAME -p $PASSWORD)
+      local OAUTH_TOKEN=$( $EXECUTING_DIR/oauth-login.sh -h $HOST -u $USERNAME -p $PASSWORD )
     fi
 
     echo "${OAUTH_TOKEN}"
