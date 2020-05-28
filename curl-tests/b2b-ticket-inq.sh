@@ -14,7 +14,7 @@ store=6
 terminal=7
 teller=8
 CA_ORIG_ID=$(printf "%s,%s,%s,%s" $retailer $store $terminal $teller)
-CA_REQ_ID=0
+CA_REQ_ID="77,$(date -u +%s)000"
 help=false
 origid=$CA_ORIG_ID
 reqid=$CA_REQ_ID
@@ -34,7 +34,7 @@ help()
   echo "  -p | --port num (default=${port})"
   echo "  -g | --gametype <draw | instant>"
   echo "  -o | --origid   <origid (default=${CA_ORIG_ID})>"
-  echo "  -r | --reqid    <reqid  (default=${CA_REQ_ID})>"
+  echo "  -r | --reqid    <reqid  (default=id,long-utc-timestamp)>"
   echo "  -s | --siteid   <siteid (default=${CA_SITE_ID})>"
   echo "  -q | --qs       <query-string>, e.g., '?foo=bah&goo=guh'"
   echo "  -t | --ticket   <ticket>"
