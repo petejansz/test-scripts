@@ -1,6 +1,7 @@
 param
 (
     [int]    $count=1,
+    [int] $oauthSessionLifeSec = 30,
     [int]    $wait = 0,
     [string] $envname,
     [string] $p = "Password1",
@@ -44,26 +45,27 @@ function showHelp()
     Write-Host "      -p <password default=${p}>"
     Write-Host "  [options]"
     Write-Host "    -count <number (default=1)> Repeat"
+    Write-Host "    -oauthSessionLifeSec <seconds (default=${oauthSessionLifeSec})> When count > 1"
     Write-Host "    -wait  <seconds (default=0)> If count specified, option to wait between calls"
 
     exit 1
 }
 
-function Check-PlayerDirect([string]$hostname, [string]$username, [string]$passwd)
+function Check-PlayerDirect([string]$hostname, [string]$sessionToken)
 {
     Write-Host "Checking $hostname ..." -foregroundcolor "green"
 
     if ($verbose)
     {
-        $d1 = dateToLong (date)
-        pd-player-self -h $hostname -u $username -p $passwd --api attributes --quiet
-        $d2 = dateToLong (date)
+        $d1 = dateToLong (Get-date)
+        pd-player-self -h $hostname -o $sessionToken --api attributes --quiet
+        $d2 = dateToLong (Get-date)
         $elapsedTime = $d2 - $d1
         Write-Output "elapsed-time: ${elapsedTime} ms"
     }
     else
     {
-        pd-player-self -h $hostname -u $username -p $passwd --api attributes --quiet
+        pd-player-self -h $hostname -o $sessionToken --api attributes --quiet
     }
 }
 
@@ -79,8 +81,22 @@ if (-not ($environments.Contains($envname)))
     exit 1
 }
 
+$sessionStartTime = dateToLong (Get-Date)
+$oauthSessionToken = pd-login.js -h $environments[$envname] -u $u -p $p
+
 for ($i=1; $i -le $count; $i++)
 {
-    Check-PlayerDirect $environments[$envname] $u $p
+    $now = dateToLong (Get-Date)
+    $elapsedTime = ($now - $sessionStartTime)
+
+    if ($elapsedTime -gt $oauthSessionLifeSec * 1000)
+    {
+        $sessionStartTime = dateToLong (Get-Date)
+        $oauthSessionToken = pd-login.js -h $environments[$envname] -u $u -p $p
+        if ($verbose) { Write-Output "New oauthSessionToken: $oauthSessionToken" }
+    }
+
+    Check-PlayerDirect $environments[$envname] $oauthSessionToken
+
     Start-Sleep -Seconds $wait
 }
