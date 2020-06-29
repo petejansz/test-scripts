@@ -21,7 +21,6 @@ QUIET=false
 HELP=false
 VERBOSE=false
 WAIT=0    # seconds
-DEFAULT_ESA_API_KEY=DBRDtq3tUERv79ehrheOUiGIrnqxTole
 DEFAULT_CURL_OPTS="-o /dev/null -s -w %{http_code}"
 let COUNT=1
 ALL_API_NAMES='attributes communication-preferences notifications notifications-preferences personal-info profile'
@@ -127,6 +126,10 @@ function forgotten_password()
       local CURL_OPTS=$DEFAULT_CURL_OPTS
     fi
 
+    if [[ -z "$ESA_API_KEY" ]]; then
+      local ESA_API_KEY=$DEFAULT_ESA_API_KEY
+    fi
+
     if [[ $VERBOSE == 'true' ]]; then
         CURL_OPTS="-v ${CURL_OPTS}"
     fi
@@ -136,6 +139,7 @@ function forgotten_password()
       -H "x-ex-system-id: $CA_SYSTEM_ID"                \
       -H "x-channel-id: $channelId"                     \
       -H 'content-type: application/json'               \
+      -H "x-esa-api-key: ${ESA_API_KEY}"                \
       --data-raw "{\"emailAddress\" : \"${FORGOTTEN_PASSWORD}\"}" )
 
     echo $RESP

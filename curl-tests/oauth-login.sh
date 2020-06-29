@@ -72,6 +72,10 @@ if [[ $HOST =~ "mobile" ]]; then
     TOKEN_CUT_FIELD_NR=$MOB_TOKEN_CUT_FLD_NR
 fi
 
+if [[ -z "$ESA_API_KEY" ]]; then
+  ESA_API_KEY=$DEFAULT_ESA_API_KEY
+fi
+
 BASE_URI=$(create_base_uri $HOST $PORT)
 RESOURCE_CREDS="\"resourceOwnerCredentials\": {\"USERNAME\":\"${USERNAME}\", \"PASSWORD\":\"${PASSWORD}\"}"
 
@@ -82,7 +86,7 @@ RESP=$(curl ${CURL_OPTS} -X POST \
   -H "x-site-id: $siteId"                           \
   -H "x-ex-system-id: $CA_SYSTEM_ID"                \
   -H "x-channel-id: $channelId"                     \
-  -H "x-esa-api-key: ${esaApiKey}"                  \
+  -H "x-esa-api-key: ${ESA_API_KEY}"                  \
   -H "x-clientip: $(hostname)"                      \
   -d "{ \"siteId\":\"${siteId}\", \"clientId\":\"${clientId}\", ${RESOURCE_CREDS} }")
 
@@ -106,7 +110,7 @@ TOKENS_RESP=$(curl ${CURL_OPTS} -X POST \
   -H "x-site-id: $siteId"                           \
   -H "x-ex-system-id: $CA_SYSTEM_ID"                \
   -H "x-channel-id: $channelId"                     \
-  -H "x-esa-api-key: ${esaApiKey}"                  \
+  -H "x-esa-api-key: ${ESA_API_KEY}"                  \
   -H "x-clientip: $(hostname)"                      \
   -d "{ \"authCode\" : \"${AUTH_CODE}\",  \"siteId\":\"${siteId}\", \"clientId\":\"${clientId}\" }" )
 
