@@ -110,7 +110,7 @@ RESPONSE=$(curl $CURL_OPTS POST $URI        \
 EXIT_CODE=$?
 
 STATUS_CODE=$(echo "${RESPONSE}" | awk '/^HTTP/{print $2}')
-BODY=$(echo "${RESPONSE}" | awk '/^{.*}$/{print $0}')
+BODY=$(echo "${RESPONSE}" | awk '/^{.*}$|code|Maintenance|message/{gsub(/^ *| *$ /, "", $0); print}')
 
 if [[ $EXIT_CODE != 0 || $VERBOSE =~ 'true' ]]; then
   echo "${RESPONSE}"
