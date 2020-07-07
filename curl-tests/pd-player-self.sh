@@ -51,7 +51,9 @@ function help()
 }
 
 # options parser:
-OPTS=$(getopt -o c:h:w:o:u:p:qv --long apis:,count:,wait:,host:,oauth:,username:,password:,port:,available:,forgot_pwd:,help,siteid:,quiet,verbose -n 'parse-options' -- "$@")
+SHORT_OPTS=c:h:w:o:u:p:qv
+LONG_OPTS=apis:,count:,wait:,host:,oauth:,username:,password:,port:,available:,forgot_pwd:,help,siteid:,quiet,verbose
+OPTS=$(getopt -o $SHORT_OPTS --long $LONG_OPTS -n 'parse-options' -- "$@")
 
 if [ $? != 0 ]; then
   help
