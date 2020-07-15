@@ -1,0 +1,1 @@
+C:/Users/pjansz/Documents/Projects/igt/pd/branches/california/tools/pd-player-self/pd-register-player.py
