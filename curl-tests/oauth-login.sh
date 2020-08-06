@@ -33,10 +33,15 @@ function help()
   echo "       --port     <port>"                                                  >&2
   echo "  -v | --verbose"                                                          >&2
   echo '  -?   --help'                                                             >&2
+  echo '  ENVIRONMENT:'                                                            >&2
+  echo "      ESA_API_KEY  default=${DEFAULT_ESA_API_KEY}"                         >&2
 }
 
 # options parser:
-OPTS=$(getopt -o h:u:p:v --long host:,username:,password:,port:,opts:,help,verbose -n 'parse-options' -- "$@")
+SHORT_OPTS=h:u:p:v
+LONG_OPTS=host:,username:,password:,port:,opts:,help,verbose
+OPTS=$(getopt -o $SHORT_OPTS --long $LONG_OPTS -n 'parse-options' -- "$@")
+
 if [ $? != 0 ]; then
   help
   exit 1
