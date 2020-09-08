@@ -29,7 +29,7 @@ CA_PD_CONSTANTS = {
         'MOBILE_CHANNEL_ID': '3',
         'PWS_CHANNEL_ID': '2'
     }
-API_KEY = 'di9bJ9MPTXOZvEKAvd7CM8cRJ4Afo54b'
+DEFAULT_ESA_API_KEY = 'di9bJ9MPTXOZvEKAvd7CM8cRJ4Afo54b'
 
 def getCommonHeaders():
     headers = {
@@ -50,7 +50,11 @@ def createHeaders( hostname ):
 
     if hostname.count('mobile') > 0:
         headers['x-channel-id'] = CA_PD_CONSTANTS.get('MOBILE_CHANNEL_ID')
-        headers['x-esa-api-key'] = API_KEY
+
+        if os.environ.get('ESA_API_KEY'):
+            headers['x-esa-api-key'] = os.environ.get('ESA_API_KEY')
+        else:
+            headers['x-esa-api-key'] = DEFAULT_ESA_API_KEY
 
     return headers
 
@@ -116,7 +120,10 @@ def createLoginRequest(endpoint, creds):
     return request
 
 def createArgParser():
-    parser = argparse.ArgumentParser(description='Python 3.7+ PD API client')
+    description = 'Python 3.7+ PD API client.'
+    description += '\n\n    ENVIRONMENT: ESA_API_KEY default=' + DEFAULT_ESA_API_KEY + '\n'
+
+    parser = argparse.ArgumentParser(description=description)
     parser.add_argument('--api', help='Names: ' + ','.join(ALL_API_NAMES), type=str)
     parser.add_argument('-c', '--count', help='Repeat count times', type=int, default=1)
     parser.add_argument('--hostname', help='Hostname', required=True, type=str)
@@ -168,10 +175,13 @@ async def main():
         api_list = validateCliApiList(parser)
 
     proto = 'https://'
-    if args.hostname.find('dev') > 0:
+    hostname = ''
+    if args.hostname.count('dev') > 0:
         proto = 'http://'
+        if args.hostname.count('mobile') and args.hostname.count('gtech.com') == 0:
+            hostname = 'mobile-cadev1.gtech.com'
 
-    endpoint = {'proto': proto, 'hostname': args.hostname}
+    endpoint = {'proto': proto, 'hostname': hostname}
     creds = {'username': args.username, 'password': args.password}
     headers = createHeaders(endpoint.get('hostname'))
 
