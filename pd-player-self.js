@@ -12,9 +12,11 @@ var path = require( 'path' )
 const API_BASE_PATH = '/api/v1/players/self/'
 const ALL_API_NAMES = ['attributes', 'communication-preferences', 'notifications', 'notifications-preferences', 'personal-info', 'profile']
 
+var description = 'REST calls to PD player/self APIs'
+description += '\n\n    ENVIRONMENT: ESA_API_KEY default=di9bJ9MPTXOZvEKAvd7CM8cRJ4Afo54b' + '\n'
 program
     .version( '0.0.1' )
-    .description( 'REST calls to PD player/self APIs' )
+    .description( description )
     .usage( '-h <host> -u <username> -p <password>' )
     .option( '-a, --async', 'Asynchronous mode' )
     .option( '-c, --count [count]', 'Repeat count times' )
