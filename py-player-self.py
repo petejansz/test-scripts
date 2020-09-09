@@ -192,9 +192,10 @@ async def main():
     async with aiohttp.ClientSession(headers=headers) as clientSession:
 
         # Login, get token set headers['Authorization']:
-        resp_dict = {}
-        oauth_token = None
         if args.username or args.password or args.oauth:
+
+            resp_dict = {}
+            oauth_token = None
 
             api_list = []
             if args.reg == None:
@@ -253,8 +254,10 @@ async def main():
             if args.available:
                 resp = await is_available(clientSession, endpoint, args)
                 print(resp)
+                exit_value = 0
             elif args.forgot:
                 await forgotten_password(clientSession, endpoint, args)
+                exit_value = 0
 
     exit(exit_value)
 
