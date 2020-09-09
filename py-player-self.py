@@ -156,6 +156,19 @@ def read_regjson(json_file):
     with open(json_file, 'r') as f:
         return json.load(f)
 
+def create_endpoint(args):
+    proto = 'https://'
+    hostname = args.hostname
+
+    if args.hostname.count('dev') > 0:
+        proto = 'http://'
+        if args.hostname.count('.gtech.com') == 0:
+            hostname += '.gtech.com'
+
+    endpoint = {'proto': proto, 'hostname': hostname}
+
+    return endpoint
+
 async def main():
     exit_value = 1
 
@@ -174,14 +187,7 @@ async def main():
     if args.reg == None:
         api_list = validateCliApiList(parser)
 
-    proto = 'https://'
-    hostname = ''
-    if args.hostname.count('dev') > 0:
-        proto = 'http://'
-        if args.hostname.count('mobile') and args.hostname.count('gtech.com') == 0:
-            hostname = 'mobile-cadev1.gtech.com'
-
-    endpoint = {'proto': proto, 'hostname': hostname}
+    endpoint = create_endpoint( args )
     creds = {'username': args.username, 'password': args.password}
     headers = createHeaders(endpoint.get('hostname'))
 
@@ -230,6 +236,8 @@ async def main():
         objects = []
         for resp_dict in responses:
             objects.append(resp_dict)
+
+        if len(objects) == 1 : objects = objects[0]
 
         if not args.quiet:
             print(json.dumps(objects, indent=4))
