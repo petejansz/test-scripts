@@ -61,15 +61,21 @@ def createHeaders( hostname ):
 def make_uri( endpoint, api_path ):
     return endpoint['proto'] + endpoint['hostname'] + api_path
 
-async def is_available(session, endpoint, creds):
+async def is_available(session, endpoint, args):
     """
     Returns text: "true|false"
     """
     api_path = '/api/v1/players/available/'
-    url = make_uri(endpoint, api_path) + creds['username']
+    url = make_uri(endpoint, api_path) + args.available
     async with session.get(url) as resp:
         assert resp.status == 200
         return await resp.text()
+
+async def forgotten_password(session, endpoint, args):
+    api_path = '/api/v1/players/forgotten-password'
+    url = make_uri( endpoint, api_path )
+    async with session.put(url, json={'emailAddress': args.forgot}) as resp:
+        print( resp.status )
 
 async def get_players_self(session, endpoint, headers, api):
     api_path = API_BASE_PATH + api
@@ -125,8 +131,10 @@ def createArgParser():
 
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument('--api', help='Names: ' + ','.join(ALL_API_NAMES), type=str)
+    parser.add_argument('--available', help='Is username available', type=str)
     parser.add_argument('-c', '--count', help='Repeat count times', type=int, default=1)
     parser.add_argument('--hostname', help='Hostname', required=True, type=str)
+    parser.add_argument('--forgot', help='Forgot password', type=str)
     parser.add_argument('-o', '--oauth', help='OAuth session token', required=False, type=str)
     parser.add_argument('-p', '--password', help='Password', required=False, type=str)
     parser.add_argument('-q', '--quiet', help='Shhhh', action='store_true')
@@ -171,7 +179,6 @@ def create_endpoint(args):
 
 async def main():
     exit_value = 1
-
     parser = createArgParser()
     args = parser.parse_args()
 
@@ -179,16 +186,7 @@ async def main():
         parser.print_help()
         exit(exit_value)
 
-    if args.username == None and args.password == None and args.oauth == None:
-        parser.print_help()
-        exit(exit_value)
-
-    api_list = []
-    if args.reg == None:
-        api_list = validateCliApiList(parser)
-
     endpoint = create_endpoint( args )
-    creds = {'username': args.username, 'password': args.password}
     headers = createHeaders(endpoint.get('hostname'))
 
     async with aiohttp.ClientSession(headers=headers) as clientSession:
@@ -196,55 +194,69 @@ async def main():
         # Login, get token set headers['Authorization']:
         resp_dict = {}
         oauth_token = None
-        if args.username and args.password:
-            try:
-               resp_dict = await loginForAuthCode(clientSession, endpoint, creds)
-            except Exception as e:
-                print(e, file=sys.stderr)
-                exit(exit_value)
+        if args.username or args.password or args.oauth:
 
-            if len(resp_dict) == 3 and resp_dict.get('code') == 'NOT_AUTHENTICATED':
-                print('401: NOT_AUTHENTICATED', file=sys.stderr)
-                exit(exit_value)
+            api_list = []
+            if args.reg == None:
+                api_list = validateCliApiList(parser)
 
-            if len(resp_dict) == 1 and resp_dict[0].get('authCode') != None:
-                authCode = resp_dict[0].get('authCode')
-                loginRequest = createLoginRequest(endpoint, creds)
+            if args.username and args.password:
+                creds = {'username': args.username, 'password': args.password}
 
                 try:
-                    resp_dict = await getOAuthTokens(clientSession, endpoint, authCode, loginRequest)
-                    if endpoint.get('hostname').count('mobile') > 0:
-                        oauth_token = resp_dict[0].get('token')
-                    else:
-                        oauth_token = resp_dict[1].get('token')
+                   resp_dict = await loginForAuthCode(clientSession, endpoint, creds)
                 except Exception as e:
                     print(e, file=sys.stderr)
                     exit(exit_value)
 
-        elif args.oauth:
-            oauth_token = args.oauth
+                if len(resp_dict) == 3 and resp_dict.get('code') == 'NOT_AUTHENTICATED':
+                    print('401: NOT_AUTHENTICATED', file=sys.stderr)
+                    exit(exit_value)
 
-        headers['Authorization'] = 'OAuth ' + oauth_token
+                if len(resp_dict) == 1 and resp_dict[0].get('authCode') != None:
+                    authCode = resp_dict[0].get('authCode')
+                    loginRequest = createLoginRequest(endpoint, creds)
 
-        tasks = []
-        for i in range(0, args.count):
-            for api in api_list:
-                tasks.append( get_players_self(clientSession, endpoint, headers, api) )
+                    try:
+                        resp_dict = await getOAuthTokens(clientSession, endpoint, authCode, loginRequest)
+                        if endpoint.get('hostname').count('mobile') > 0:
+                            oauth_token = resp_dict[0].get('token')
+                        else:
+                            oauth_token = resp_dict[1].get('token')
+                    except Exception as e:
+                        print(e, file=sys.stderr)
+                        exit(exit_value)
+            elif args.oauth:
+                oauth_token = args.oauth
 
-        responses = await asyncio.gather(*tasks)
+            headers['Authorization'] = 'OAuth ' + oauth_token
 
-        objects = []
-        for resp_dict in responses:
-            objects.append(resp_dict)
+            tasks = []
+            for i in range(0, args.count):
+                for api in api_list:
+                    tasks.append( get_players_self(clientSession, endpoint, headers, api) )
 
-        if len(objects) == 1 : objects = objects[0]
+            responses = await asyncio.gather(*tasks)
 
-        if not args.quiet:
-            print(json.dumps(objects, indent=4))
+            objects = []
+            for resp_dict in responses:
+                objects.append(resp_dict)
 
-        exit_value = 0
+            if len(objects) == 1 : objects = objects[0]
 
-        exit(exit_value)
+            if not args.quiet:
+                print(json.dumps(objects, indent=4))
+
+            exit_value = 0
+
+        else:  # Anonymous
+            if args.available:
+                resp = await is_available(clientSession, endpoint, args)
+                print(resp)
+            elif args.forgot:
+                await forgotten_password(clientSession, endpoint, args)
+
+    exit(exit_value)
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
