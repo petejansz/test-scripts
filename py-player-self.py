@@ -83,6 +83,12 @@ async def get_players_self(session, endpoint, headers, api):
     async with session.get(url, headers=headers) as resp:
         return await resp.json()
 
+async def update_players_self(session, endpoint, headers, api, json):
+    api_path = API_BASE_PATH + api
+    url = make_uri(endpoint, api_path)
+    async with session.put(url, headers=headers, json=json) as resp:
+        return await resp.json()
+
 async def loginForAuthCode(session, endpoint, creds):
     """
     Make OAuth login, return JSON with authCode
@@ -126,21 +132,21 @@ def createLoginRequest(endpoint, creds):
     return request
 
 def createArgParser():
-    description = 'Python 3.7+ PD API client.'
-    description += '\n\n    ENVIRONMENT: ESA_API_KEY default=' + DEFAULT_ESA_API_KEY + '\n'
+    formatter_class = argparse.RawDescriptionHelpFormatter
+    description = '''Python 3.7+ PD API client.\n  ENVIRONMENT: ESA_API_KEY default=''' + DEFAULT_ESA_API_KEY
 
-    parser = argparse.ArgumentParser(description=description)
+    parser = argparse.ArgumentParser(formatter_class=formatter_class, description=description)
     parser.add_argument('--api', help='Names: ' + ','.join(ALL_API_NAMES), type=str)
     parser.add_argument('--available', help='Is username available', type=str)
     parser.add_argument('-c', '--count', help='Repeat count times', type=int, default=1)
     parser.add_argument('--hostname', help='Hostname', required=True, type=str)
     parser.add_argument('--forgot', help='Forgot password', type=str)
     parser.add_argument('-o', '--oauth', help='OAuth session token', required=False, type=str)
-    parser.add_argument('-p', '--password', help='Password', required=False, type=str)
+    parser.add_argument('-p', '--password', help='Password', required=False, default='Password1', type=str)
     parser.add_argument('-q', '--quiet', help='Shhhh', action='store_true')
     parser.add_argument('--reg', help='Register new user', required=False, type=str)
-    parser.add_argument('-u', '--username', help='Username',
-                        required=False, type=str)
+    parser.add_argument('-u', '--username', help='Username', required=False, type=str)
+    parser.add_argument('--update', help='Update an API from filename or "stdin"', required=False, type=str)
     return parser
 
 def validateCliApiList(parser):
@@ -158,7 +164,6 @@ def validateCliApiList(parser):
         api_list = cli_api_args.copy()
 
     return api_list
-
 
 def read_regjson(json_file):
     with open(json_file, 'r') as f:
@@ -232,23 +237,35 @@ async def main():
 
             headers['Authorization'] = 'OAuth ' + oauth_token
 
-            tasks = []
-            for i in range(0, args.count):
-                for api in api_list:
-                    tasks.append( get_players_self(clientSession, endpoint, headers, api) )
+            if args.api != None and args.update == None:
+                tasks = []
+                for i in range(0, args.count):
+                    for api in api_list:
+                        tasks.append( get_players_self(clientSession, endpoint, headers, api) )
 
-            responses = await asyncio.gather(*tasks)
+                responses = await asyncio.gather(*tasks)
 
-            objects = []
-            for resp_dict in responses:
-                objects.append(resp_dict)
+                objects = []
+                for resp_dict in responses:
+                    objects.append(resp_dict)
 
-            if len(objects) == 1 : objects = objects[0]
+                if len(objects) == 1 : objects = objects[0]
 
-            if not args.quiet:
-                print(json.dumps(objects, indent=4))
+                if not args.quiet:
+                    print(json.dumps(objects, indent=4))
 
-            exit_value = 0
+                exit_value = 0
+            elif args.api != None and args.update != None:
+                json_payload = ''
+                if args.update == 'stdin':
+                    json_payload = json.load(sys.stdin)
+                else:
+                    with open(args.update) as f:
+                        json_payload = json.load(f)
+
+                response = await update_players_self(clientSession, endpoint, headers, args.api, json_payload)
+                print(json.dumps(response, indent=4))
+                exit_value = 0
 
         else:  # Anonymous
             if args.available:
