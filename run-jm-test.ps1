@@ -48,4 +48,5 @@ for ($i = 1; $i -le $count; $i++)
 
     jmeter -n -t $jmxFile -l $resultsCsvFile -p $propertiesFile -j $logFile -e -o output
     jmeter -g $resultsCsvFile -o reports
+    & reports/index.html
 }

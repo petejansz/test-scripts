@@ -12,10 +12,9 @@
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal",
             "args": [
-                 "-f", "json",
-                // "-t", "10231000003000095990457111",
-                // "-t", "10231000003000095990457222",
-                 "-t", "##MRDGZYLYWXJ", "-t", "##P&FCS&HYRMB"
+                "--hostname", "cadev1",
+                "-u", "mansir@mailinator.com",
+                "--api", "profile", "--update", "/tmp/pro.json"
             ]
         },
         {
