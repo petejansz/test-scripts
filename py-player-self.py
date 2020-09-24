@@ -77,6 +77,19 @@ async def forgotten_password(session, endpoint, args):
     async with session.put(url, json={'emailAddress': args.forgot}) as resp:
         print( resp.status )
 
+async def unsubscribe_event(session, endpoint, args):
+    api_path = '/api/v1/notifications/unsubscribe'
+    url = make_uri(endpoint, api_path)
+    params = {'token': args.unsub_event}
+    async with session.post(url, params=params) as resp:
+        print(resp.status)
+
+async def unsubscribe_promo(session, endpoint, args):
+    api_path = '/api/v1/players/notifications/promo/unsubscribe/'
+    url = make_uri(endpoint, api_path) + args.unsub_promo
+    async with session.post(url) as resp:
+        print(resp.status)
+
 async def get_players_self(session, endpoint, headers, api):
     api_path = API_BASE_PATH + api
     url = make_uri(endpoint, api_path)
@@ -147,6 +160,8 @@ def createArgParser():
     parser.add_argument('--reg', help='Register new user', required=False, type=str)
     parser.add_argument('-u', '--username', help='Username', required=False, type=str)
     parser.add_argument('--update', help='Update an API from filename or "stdin"', required=False, type=str)
+    parser.add_argument('--unsub_event', help='Usubscribe from a host-event email', required=False, type=str)
+    parser.add_argument('--unsub_promo', help='Usubscribe from promotional email', required=False, type=str)
     return parser
 
 def validateCliApiList(parser):
@@ -195,6 +210,24 @@ async def main():
     headers = createHeaders(endpoint.get('hostname'))
 
     async with aiohttp.ClientSession(headers=headers) as clientSession:
+
+        if args.available:
+            resp = await is_available(clientSession, endpoint, args)
+            print(resp)
+            exit_value = 0
+            exit(exit_value)
+        elif args.forgot:
+            await forgotten_password(clientSession, endpoint, args)
+            exit_value = 0
+            exit(exit_value)
+        elif args.unsub_event:
+            await unsubscribe_event(clientSession, endpoint, args)
+            exit_value = 0
+            exit(exit_value)
+        elif args.unsub_promo:
+            await unsubscribe_promo(clientSession, endpoint, args)
+            exit_value = 0
+            exit(exit_value)
 
         # Login, get token set headers['Authorization']:
         if args.username or args.password or args.oauth:
@@ -265,15 +298,6 @@ async def main():
 
                 response = await update_players_self(clientSession, endpoint, headers, args.api, json_payload)
                 print(json.dumps(response, indent=4))
-                exit_value = 0
-
-        else:  # Anonymous
-            if args.available:
-                resp = await is_available(clientSession, endpoint, args)
-                print(resp)
-                exit_value = 0
-            elif args.forgot:
-                await forgotten_password(clientSession, endpoint, args)
                 exit_value = 0
 
     exit(exit_value)
