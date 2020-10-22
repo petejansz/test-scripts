@@ -61,6 +61,26 @@ def createHeaders( hostname ):
 def make_uri( endpoint, api_path ):
     return endpoint['proto'] + endpoint['hostname'] + api_path
 
+
+async def activate_account(session, endpoint, args):
+    api_path = '/api/v2/players/activate-account/'
+    url = make_uri(endpoint, api_path) + args.activate
+    headers = createHeaders( args.hostname )
+    async with session.post( url, headers=headers, json={} ) as resp:
+        print(resp.status)
+
+async def change_password(session, endpoint, headers, args):
+    api_path = '/api/v2/players/self/password'
+    url = make_uri(endpoint, api_path)
+    async with session.put(url, headers=headers, json={'oldPassword': args.chpwd, 'newPassword': args.newpwd}) as resp:
+        print(resp.status)
+
+async def forgotten_password(session, endpoint, args):
+    api_path = '/api/v1/players/forgotten-password'
+    url = make_uri(endpoint, api_path)
+    async with session.put(url, json={'emailAddress': args.forgot}) as resp:
+        print(resp.status)
+
 async def is_available(session, endpoint, args):
     """
     Returns text: "true|false"
@@ -71,11 +91,26 @@ async def is_available(session, endpoint, args):
         assert resp.status == 200
         return await resp.text()
 
-async def forgotten_password(session, endpoint, args):
-    api_path = '/api/v1/players/forgotten-password'
-    url = make_uri( endpoint, api_path )
-    async with session.put(url, json={'emailAddress': args.forgot}) as resp:
-        print( resp.status )
+async def lock_service(session, endpoint, headers, lock):
+    api_path = '/api/v1/players/self/lock-service'
+    reason = 'To lock or unlock, that is the question.'
+    url = make_uri(endpoint, api_path)
+    async with session.put(url, headers=headers, json={'lockPlayer': lock, 'reason': reason}) as resp:
+        print(resp.status)
+
+async def reset_password(session, endpoint, args):
+    api_path = '/api/v2/players/reset-password'
+    onetimeToken = args.resetpwd
+    url = make_uri(endpoint, api_path)
+    headers = createHeaders( args.hostname )
+    async with session.put( url, headers=headers, json={'newPassword': args.newpwd, 'oneTimeToken': onetimeToken} ) as resp:
+        print(resp.status)
+
+async def resend_activation_mail(session, endpoint, headers):
+    api_path = '/api/v2/players/self/activation-mail'
+    url = make_uri(endpoint, api_path)
+    async with session.put(url, headers=headers, json={}) as resp:
+        print(resp.status)
 
 async def unsubscribe_event(session, endpoint, args):
     api_path = '/api/v1/notifications/unsubscribe'
@@ -90,6 +125,13 @@ async def unsubscribe_promo(session, endpoint, args):
     async with session.post(url) as resp:
         print(resp.status)
 
+async def verify_code(session, endpoint, args):
+    api_path = '/api/v1/players/verify/'
+    url = make_uri(endpoint, api_path) + args.verify
+    headers = createHeaders( args.hostname )
+    async with session.get( url, headers=headers ) as resp:
+        print(resp.status)
+
 async def get_players_self(session, endpoint, headers, api):
     api_path = API_BASE_PATH + api
     url = make_uri(endpoint, api_path)
@@ -102,13 +144,13 @@ async def update_players_self(session, endpoint, headers, api, json):
     async with session.put(url, headers=headers, json=json) as resp:
         return await resp.json()
 
-async def loginForAuthCode(session, endpoint, creds):
+async def loginForAuthCode(session, endpoint, args):
     """
     Make OAuth login, return JSON with authCode
     """
     api_path = '/api/v1/oauth/login'
     url = make_uri(endpoint, api_path)
-    loginRequest = createLoginRequest(endpoint, creds)
+    loginRequest = createLoginRequest(endpoint, args)
     async with session.post(url, json=loginRequest) as resp:
         return await resp.json()
 
@@ -131,7 +173,8 @@ async def getOAuthTokens(session, endpoint, authCode, loginRequest):
     async with session.post(url, json=oAuthTokensRequest) as resp:
         return await resp.json()
 
-def createLoginRequest(endpoint, creds):
+
+def createLoginRequest(endpoint, args):
     request = { 'siteId': CA_SITE_CONSTANTS.get('SITE_ID') }
 
     if endpoint.get('hostname').count( 'mobile' ) > 0:
@@ -139,9 +182,12 @@ def createLoginRequest(endpoint, creds):
     else:
         request['clientId'] = CA_PD_CONSTANTS.get('PWS_CLIENT_ID')
 
-    if creds.get('username') and creds.get('password'):
-        request['resourceOwnerCredentials'] = { 'USERNAME': creds.get('username'), 'PASSWORD': creds.get('password') }
-
+    if args.username and args.chpwd:
+        request['resourceOwnerCredentials'] = {
+            'USERNAME': args.username, 'PASSWORD': args.chpwd}
+    elif args.username and args.password:
+        request['resourceOwnerCredentials'] = {
+            'USERNAME': args.username, 'PASSWORD': args.password}
     return request
 
 def createArgParser():
@@ -149,19 +195,27 @@ def createArgParser():
     description = '''Python 3.7+ PD API client.\n  ENVIRONMENT: ESA_API_KEY default=''' + DEFAULT_ESA_API_KEY
 
     parser = argparse.ArgumentParser(formatter_class=formatter_class, description=description)
+    parser.add_argument('--activate', help='Activate account with token', required=False, type=str)
     parser.add_argument('--api', help='Names: ' + ','.join(ALL_API_NAMES), type=str)
     parser.add_argument('--available', help='Is username available', type=str)
     parser.add_argument('-c', '--count', help='Repeat count times', type=int, default=1)
+    parser.add_argument('--chpwd', help='Change password, --newpwd <NEWPWD>', required=False, type=str)
     parser.add_argument('--hostname', help='Hostname', required=True, type=str)
     parser.add_argument('--forgot', help='Forgot password', type=str)
+    parser.add_argument('--lock', help='Lock/suspend account', required=False, action='store_true')
+    parser.add_argument('--unlock', help='Unlock/preactive account', required=False, action='store_true')
     parser.add_argument('-o', '--oauth', help='OAuth session token', required=False, type=str)
+    parser.add_argument('--newpwd', help='New password used with chpwd, resetpwd', required=False, type=str )
     parser.add_argument('-p', '--password', help='Password', required=False, default='Password1', type=str)
     parser.add_argument('-q', '--quiet', help='Shhhh', action='store_true')
     parser.add_argument('--reg', help='Register new user', required=False, type=str)
+    parser.add_argument('--resetpwd', help='Reset password using <onetimeToken>, --newpwd <NEWPWD>', required=False, type=str)
+    parser.add_argument('--resend', help='Resend activation mail', required=False, action='store_true')
     parser.add_argument('-u', '--username', help='Username', required=False, type=str)
     parser.add_argument('--update', help='Update an API from filename or "stdin"', required=False, type=str)
-    parser.add_argument('--unsub_event', help='Usubscribe from a host-event email', required=False, type=str)
-    parser.add_argument('--unsub_promo', help='Usubscribe from promotional email', required=False, type=str)
+    parser.add_argument('--unsub_event', help='Unsubscribe from a host-event email', required=False, type=str)
+    parser.add_argument('--unsub_promo', help='Unsubscribe from promotional email', required=False, type=str)
+    parser.add_argument('--verify', help='Verify code', required=False, type=str)
     return parser
 
 def validateCliApiList(parser):
@@ -216,8 +270,16 @@ async def main():
             print(resp)
             exit_value = 0
             exit(exit_value)
+        elif args.activate:
+            await activate_account(clientSession, endpoint, args)
+            exit_value = 0
+            exit(exit_value)
         elif args.forgot:
             await forgotten_password(clientSession, endpoint, args)
+            exit_value = 0
+            exit(exit_value)
+        elif args.resetpwd:
+            await reset_password(clientSession, endpoint, args)
             exit_value = 0
             exit(exit_value)
         elif args.unsub_event:
@@ -228,9 +290,13 @@ async def main():
             await unsubscribe_promo(clientSession, endpoint, args)
             exit_value = 0
             exit(exit_value)
+        elif args.verify:
+            await verify_code(clientSession, endpoint, args)
+            exit_value = 0
+            exit(exit_value)
 
         # Login, get token set headers['Authorization']:
-        if args.username or args.password or args.oauth:
+        if args.username or args.password or args.chpwd or args.oauth:
 
             resp_dict = {}
             oauth_token = None
@@ -239,11 +305,10 @@ async def main():
             if args.reg == None:
                 api_list = validateCliApiList(parser)
 
-            if args.username and args.password:
-                creds = {'username': args.username, 'password': args.password}
+            if args.username and args.password or args.chpwd:
 
                 try:
-                   resp_dict = await loginForAuthCode(clientSession, endpoint, creds)
+                   resp_dict = await loginForAuthCode(clientSession, endpoint, args)
                 except Exception as e:
                     print(e, file=sys.stderr)
                     exit(exit_value)
@@ -254,7 +319,7 @@ async def main():
 
                 if len(resp_dict) == 1 and resp_dict[0].get('authCode') != None:
                     authCode = resp_dict[0].get('authCode')
-                    loginRequest = createLoginRequest(endpoint, creds)
+                    loginRequest = createLoginRequest(endpoint, args)
 
                     try:
                         resp_dict = await getOAuthTokens(clientSession, endpoint, authCode, loginRequest)
@@ -299,6 +364,14 @@ async def main():
                 response = await update_players_self(clientSession, endpoint, headers, args.api, json_payload)
                 print(json.dumps(response, indent=4))
                 exit_value = 0
+            elif args.lock:
+                response = await lock_service(clientSession, endpoint, headers, True)
+            elif args.unlock:
+                response = await lock_service(clientSession, endpoint, headers, False)
+            elif args.chpwd:
+                response = await change_password(clientSession, endpoint, headers, args)
+            elif args.resend:
+                response = await resend_activation_mail(clientSession, endpoint, headers)
 
     exit(exit_value)
 
