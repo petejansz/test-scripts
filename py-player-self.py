@@ -61,10 +61,15 @@ def createHeaders( hostname ):
 def make_uri( endpoint, api_path ):
     return endpoint['proto'] + endpoint['hostname'] + api_path
 
-
 async def activate_account(session, endpoint, args):
     api_path = '/api/v2/players/activate-account/'
-    url = make_uri(endpoint, api_path) + args.activate
+
+    token = str(args.activate)
+    if token.count('code='):
+        rubbish, token = token.split('=')
+        token = token.strip()
+
+    url = make_uri(endpoint, api_path) + token
     headers = createHeaders( args.hostname )
     async with session.post( url, headers=headers, json={} ) as resp:
         print(resp.status)
