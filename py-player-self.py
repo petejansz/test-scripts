@@ -103,6 +103,13 @@ async def lock_service(session, endpoint, headers, lock):
     async with session.put(url, headers=headers, json={'lockPlayer': lock, 'reason': reason}) as resp:
         print(resp.status)
 
+
+async def logout(session, endpoint, headers, outh_token):
+    api_path = '/api/v1/oauth/logout'
+    url = make_uri(endpoint, api_path)
+    async with session.delete(url, headers=headers, json={'token': outh_token, 'tokenType': 'OAuth'}) as resp:
+        print(resp.status)
+
 async def reset_password(session, endpoint, args):
     api_path = '/api/v2/players/reset-password'
     onetimeToken = args.resetpwd
@@ -178,7 +185,6 @@ async def getOAuthTokens(session, endpoint, authCode, loginRequest):
     async with session.post(url, json=oAuthTokensRequest) as resp:
         return await resp.json()
 
-
 def createLoginRequest(endpoint, args):
     request = { 'siteId': CA_SITE_CONSTANTS.get('SITE_ID') }
 
@@ -208,6 +214,8 @@ def createArgParser():
     parser.add_argument('--hostname', help='Hostname', required=True, type=str)
     parser.add_argument('--forgot', help='Forgot password', type=str)
     parser.add_argument('--lock', help='Lock/suspend account', required=False, action='store_true')
+    parser.add_argument('--login', help='Login with username, password, get session token', required=False, action='store_true')
+    parser.add_argument('--logout', help='Logout with session token', required=False, type=str)
     parser.add_argument('--unlock', help='Unlock/preactive account', required=False, action='store_true')
     parser.add_argument('-o', '--oauth', help='OAuth session token', required=False, type=str)
     parser.add_argument('--newpwd', help='New password used with chpwd, resetpwd', required=False, type=str )
@@ -283,6 +291,12 @@ async def main():
             await forgotten_password(clientSession, endpoint, args)
             exit_value = 0
             exit(exit_value)
+        elif args.logout:
+            outh_token = args.logout
+            headers['Authorization'] = 'OAuth ' + outh_token
+            await logout(clientSession, endpoint, headers, outh_token)
+            exit_value = 0
+            exit(exit_value)
         elif args.resetpwd:
             await reset_password(clientSession, endpoint, args)
             exit_value = 0
@@ -310,7 +324,7 @@ async def main():
             if args.reg == None:
                 api_list = validateCliApiList(parser)
 
-            if args.username and args.password or args.chpwd:
+            if args.username and args.password:
 
                 try:
                    resp_dict = await loginForAuthCode(clientSession, endpoint, args)
@@ -369,12 +383,23 @@ async def main():
                 response = await update_players_self(clientSession, endpoint, headers, args.api, json_payload)
                 print(json.dumps(response, indent=4))
                 exit_value = 0
+            elif args.username and args.chpwd:
+                response = await change_password(clientSession, endpoint, headers, args)
             elif args.lock:
                 response = await lock_service(clientSession, endpoint, headers, True)
             elif args.unlock:
                 response = await lock_service(clientSession, endpoint, headers, False)
-            elif args.chpwd:
-                response = await change_password(clientSession, endpoint, headers, args)
+            elif args.login:
+                response = await loginForAuthCode(clientSession, endpoint, args)
+                authCode = response[0].get('authCode')
+                loginRequest = createLoginRequest(endpoint, args)
+                response = await getOAuthTokens(clientSession, endpoint, authCode, loginRequest)
+                oauth_token = None
+                if endpoint.get('hostname').count('mobile') > 0:
+                    oauth_token = response[0].get('token')
+                else:
+                    oauth_token = response[1].get('token')
+                print(oauth_token)
             elif args.resend:
                 response = await resend_activation_mail(clientSession, endpoint, headers)
 
