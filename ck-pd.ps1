@@ -58,14 +58,14 @@ function Check-PlayerDirect([string]$hostname, [string]$sessionToken)
     if ($verbose)
     {
         $d1 = dateToLong (Get-date)
-        pd-player-self -h $hostname -o $sessionToken --api attributes --quiet
+        pd-player-self -h $hostname -o $sessionToken --quiet
         $d2 = dateToLong (Get-date)
         $elapsedTime = $d2 - $d1
         Write-Output "elapsed-time: ${elapsedTime} ms"
     }
     else
     {
-        pd-player-self -h $hostname -o $sessionToken --api attributes --quiet
+        pd-player-self -h $hostname -o $sessionToken --quiet
     }
 }
 
