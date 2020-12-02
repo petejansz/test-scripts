@@ -32,40 +32,58 @@ def createArgParser():
 
     return parser
 
-def register_user(url, username):
-
-    current_datetime = int(round(time.time() * 1000))
-    home = {'type': 'HOME', 'number': '9160000001', 'provider': 'Regular'}
-    personal = {'type': 'PERSONAL', 'address': username, 'verified': False, 'certaintyLevel': 200}
-    mailing = {'type': 'MAILING', 'postalCode': '90057', 'city': 'SACRAMENTO', 'isoCountryCode': 'US', 'state': 'CA', 'country': 'US', 'address1': '123 Elm St', 'address2': '', 'verifyLevel': 7}
-    caProfile = {'acceptedTermsAndConditionsDate': current_datetime, 'acceptsEmail': True, 'acceptsPromotionalEmail': True, 'acceptsRewards': True, 'acceptTermsAndConditions': True, 'language': 'EN',
-                 'emailFormat': 'HTML', 'registrationDate': current_datetime, 'registrationLevel': 1, 'termsAndConditionsId': '1479920506901', 'userName': username, 'jackpotCaptain': False}
-    nonpublicPersonalInfo = {'dateOfBirth': 24564227800}
-    personalInfo = {
-        'firstName': 'MAN', 'middleName': 'S', 'lastName': 'SIR', 'gender': 'MALE', 'prefix': 'MR', 'suffix': 'JR',
-        'addresses': {'MAILING': mailing},
-        'phones': {'HOME': home},
-        'emails': {'PERSONAL': personal},
-        'citizenship': 'Resident', 'dateOfBirth': 0, 'addressResultCode': '',
-        'dateOfBirthMatchCode': '', 'userIdVerified': '0', 'ssnresultCode': '',
-        'ofacvalidationResultCode': 1, 'telephoneVerificationResultCode': ''
+def create_CaProfile(date_time, username):
+    return {
+        'acceptedTermsAndConditionsDate': date_time,
+        'acceptsEmail': True,
+        'acceptsPromotionalEmail': True,
+        'acceptTermsAndConditions': True,
+        'language': 'EN',
+        'termsAndConditionsId': date_time,
+        'userName': username
         }
+
+def create_mailing():
+    return {
+        'type': 'MAILING',
+        'address1': '123 Elm St',
+        'postalCode': '90057',
+        'city': 'SACRAMENTO',
+        'state': 'CA',
+        'isoCountryCode': 'US'
+        }
+
+def create_personal_info(username):
+    mailing = create_mailing()
+    personalInfo = {
+        'firstName': 'MAN',
+        'lastName': 'SIR',
+        'addresses': { 'MAILING': mailing },
+        'phones': { 'HOME': {'type': 'HOME', 'number': '0000000000'} },
+        'emails': {'PERSONAL': {'type': 'PERSONAL', 'address': username, 'verified': False}},
+        'dateOfBirth': 0,
+    }
+
+    return personalInfo
+
+def register_user(url, username):
+    current_datetime = int(round(time.time() * 1000))
 
     payload = {
         'password': 'Password1',
-        'personalInfo': personalInfo,
-        'nonpublicPersonalInfo': nonpublicPersonalInfo,
-        'caProfile': caProfile
+        'personalInfo': create_personal_info( username ),
+        'nonpublicPersonalInfo': {'dateOfBirth': 0},
+        'caProfile': create_CaProfile(current_datetime, username)
         }
 
     payload_json_str = str(json.dumps(payload, indent=2))
 
     headers = {
-        'Content-Type': 'application/json',
-        'Content-length': str(len(payload_json_str)),
-        'X-SITE-ID': CA_SITE_CONSTANTS['SITE_ID'],
-        'X-EX-SYSTEM-ID': CA_SITE_CONSTANTS['SYSTEM_ID'],
-        'X-CHANNEL-ID': CA_SITE_CONSTANTS['PWS_CHANNEL_ID']
+        'content-type': 'application/json',
+        'content-length': str(len(payload_json_str)),
+        'x-site-id': CA_SITE_CONSTANTS['SITE_ID'],
+        'x-ex-system-id': CA_SITE_CONSTANTS['SYSTEM_ID'],
+        'x-channel-id': CA_SITE_CONSTANTS['PWS_CHANNEL_ID']
     }
 
     response = requests.request(
