@@ -1,5 +1,6 @@
 param
 (
+    [string] $api='attributes',
     [int]    $count=1,
     [int] $oauthSessionLifeSec = 30,
     [int]    $wait = 0,
@@ -33,6 +34,8 @@ $environments['mobile-cat2'] = 'ca-cat2-mobile.lotteryservices.com'
 $environments['sit'] = 'ca-cat2-pws.lotteryservices.com'
 $environments['mobile-sit'] = 'ca-cat2-mobile.lotteryservices.com'
 
+$apinames = @('attributes','communication-preferences','notifications','notifications-preferences','personal-info','profile')
+
 $ScriptName = $MyInvocation.MyCommand.Name
 function showHelp()
 {
@@ -44,6 +47,8 @@ function showHelp()
     Write-Host "      -u <username>"
     Write-Host "      -p <password default=${p}>"
     Write-Host "  [options]"
+    Write-Host "    -api <name,... (default=attributes)>"
+    Write-Host "       api names: $apinames"
     Write-Host "    -count <number (default=1)> Repeat"
     Write-Host "    -oauthSessionLifeSec <seconds (default=${oauthSessionLifeSec})> When count > 1"
     Write-Host "    -wait  <seconds (default=0)> If count specified, option to wait between calls"
@@ -51,21 +56,48 @@ function showHelp()
     exit 1
 }
 
-function Check-PlayerDirect([string]$hostname, [string]$sessionToken)
+function validateApinames()
+{
+    $names = ($api -replace(" +", ',')).split(',')
+    foreach ($name in $names)
+    {
+        if (-not ($apinames.Contains(($name))))
+        {
+            Write-Host "API name not found: $name"
+            Write-Host "Valid api names: $apinames"
+            exit 1
+        }
+    }
+
+    $validated_apinames = $names -join ','
+    return $validated_apinames
+}
+
+function validateEnvName()
+{
+    if (-not ($environments.Contains($envname)))
+    {
+        Write-Host "Env name not found: $envname"
+        Write-Host "Valid env names: " $environments.Keys
+        exit 1
+    }
+}
+
+function Check-PlayerDirect([string]$hostname, [string]$sessionToken, [string]$apinames)
 {
     Write-Host "Checking $hostname ..." -foregroundcolor "green"
 
     if ($verbose)
     {
         $d1 = dateToLong (Get-date)
-        pd-player-self -h $hostname -o $sessionToken --quiet
+        pd-player-self -h $hostname -o $sessionToken --api $apinames
         $d2 = dateToLong (Get-date)
         $elapsedTime = $d2 - $d1
         Write-Output "elapsed-time: ${elapsedTime} ms"
     }
     else
     {
-        pd-player-self -h $hostname -o $sessionToken --quiet
+        pd-player-self -h $hostname -o $sessionToken --api $apinames --quiet
     }
 }
 
@@ -74,12 +106,8 @@ if (-not($envname)) { showHelp }
 if (-not($p)) { showHelp }
 if (-not($u)) { showHelp }
 
-if (-not ($environments.Contains($envname)))
-{
-    Write-Host "Not found: $envname"
-    Write-host "Valid names: " $environments.Keys
-    exit 1
-}
+$validated_apinames = validateApinames
+validateEnvName
 
 $sessionStartTime = dateToLong (Get-Date)
 $oauthSessionToken = pd-login.js -h $environments[$envname] -u $u -p $p
@@ -96,7 +124,7 @@ for ($i=1; $i -le $count; $i++)
         if ($verbose) { Write-Output "New oauthSessionToken: $oauthSessionToken" }
     }
 
-    Check-PlayerDirect $environments[$envname] $oauthSessionToken
+    Check-PlayerDirect $environments[$envname] $oauthSessionToken $validated_apinames
 
     Start-Sleep -Seconds $wait
 }
