@@ -51,6 +51,7 @@ function showHelp()
     Write-Host "       api names: $apinames"
     Write-Host "    -count <number (default=1)> Repeat"
     Write-Host "    -oauthSessionLifeSec <seconds (default=${oauthSessionLifeSec})> When count > 1"
+    Write-Host "    -verbose"
     Write-Host "    -wait  <seconds (default=0)> If count specified, option to wait between calls"
 
     exit 1
