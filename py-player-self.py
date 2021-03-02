@@ -11,25 +11,18 @@ Author: Pete Jansz, 2020
 import aiohttp
 import asyncio
 import argparse
+from casite import casite
 import io
 import json
 import os
 import sys
 
+caSite = None
 API_BASE_PATH = '/api/v1/players/self/'
 ALL_API_NAMES = [
     'attributes', 'communication-preferences', 'notifications',
     'notifications-preferences', 'personal-info', 'profile'
 ]
-
-CA_SITE_CONSTANTS = {'SITE_ID': '35', 'SYSTEM_ID': '8'}
-CA_PD_CONSTANTS = {
-        'MOBILE_CLIENT_ID': 'CAMOBILEAPP',
-        'PWS_CLIENT_ID': 'SolSet2ndChancePortal',
-        'MOBILE_CHANNEL_ID': '3',
-        'PWS_CHANNEL_ID': '2'
-    }
-DEFAULT_ESA_API_KEY = 'di9bJ9MPTXOZvEKAvd7CM8cRJ4Afo54b'
 
 def getCommonHeaders():
     headers = {
@@ -44,17 +37,17 @@ def createHeaders( hostname ):
 
     headers = getCommonHeaders()
 
-    headers['x-ex-system-id'] = CA_SITE_CONSTANTS.get('SYSTEM_ID')
-    headers['x-site-id'] =  CA_SITE_CONSTANTS.get('SITE_ID')
-    headers['x-channel-id'] = CA_PD_CONSTANTS.get('PWS_CHANNEL_ID')
+    headers['x-ex-system-id'] = caSite.sysID
+    headers['x-site-id'] =  caSite.siteID
+    headers['x-channel-id'] = caSite.pwsChannelID
 
     if hostname.count('mobile') > 0:
-        headers['x-channel-id'] = CA_PD_CONSTANTS.get('MOBILE_CHANNEL_ID')
+        headers['x-channel-id'] = caSite.mobileChannelID
 
         if os.environ.get('ESA_API_KEY'):
             headers['x-esa-api-key'] = os.environ.get('ESA_API_KEY')
         else:
-            headers['x-esa-api-key'] = DEFAULT_ESA_API_KEY
+            headers['x-esa-api-key'] = caSite.defaultEsaApiKey
 
     return headers
 
@@ -186,12 +179,12 @@ async def getOAuthTokens(session, endpoint, authCode, loginRequest):
         return await resp.json()
 
 def createLoginRequest(endpoint, args):
-    request = { 'siteId': CA_SITE_CONSTANTS.get('SITE_ID') }
+    request = { 'siteId': caSite.siteID }
 
     if endpoint.get('hostname').count( 'mobile' ) > 0:
-        request['clientId'] = CA_PD_CONSTANTS.get('MOBILE_CLIENT_ID')
+        request['clientId'] = caSite.mobileClientID
     else:
-        request['clientId'] = CA_PD_CONSTANTS.get('PWS_CLIENT_ID')
+        request['clientId'] = caSite.pwsClientID
 
     if args.username and args.chpwd:
         request['resourceOwnerCredentials'] = {
@@ -203,7 +196,7 @@ def createLoginRequest(endpoint, args):
 
 def createArgParser():
     formatter_class = argparse.RawDescriptionHelpFormatter
-    description = '''Python 3.7+ PD API client.\n  ENVIRONMENT: ESA_API_KEY default=''' + DEFAULT_ESA_API_KEY
+    description = '''Python 3.7+ PD API client.\n  ENVIRONMENT: ESA_API_KEY default=''' + caSite.defaultEsaApiKey
 
     parser = argparse.ArgumentParser(formatter_class=formatter_class, description=description)
     parser.add_argument('--activate', help='Activate account with token', required=False, type=str)
@@ -211,7 +204,9 @@ def createArgParser():
     parser.add_argument('--available', help='Is username available', type=str)
     parser.add_argument('-c', '--count', help='Repeat count times', type=int, default=1)
     parser.add_argument('--chpwd', help='Change password, --newpwd <NEWPWD>', required=False, type=str)
-    parser.add_argument('--hostname', help='Hostname', required=True, type=str)
+    parser.add_argument('--envname', help='Environment name', required=False, type=str, choices=caSite.pdenvs())
+    parser.add_argument('--hostname', help='Hostname',
+                        required=False, type=str, choices=caSite.pdvhosts())
     parser.add_argument('--forgot', help='Forgot password', type=str)
     parser.add_argument('--lock', help='Lock/suspend account', required=False, action='store_true')
     parser.add_argument('--login', help='Login with username, password, get session token', required=False, action='store_true')
@@ -266,12 +261,16 @@ def create_endpoint(args):
 
 async def main():
     exit_value = 1
+    global caSite
+    caSite = casite.CalifSite()
     parser = createArgParser()
     args = parser.parse_args()
 
-    if args.hostname == None:
+    if args.hostname == None and args.envname == None:
         parser.print_help()
         exit(exit_value)
+    if args.envname:
+        args.hostname = caSite.pdvhost(args.envname)
 
     endpoint = create_endpoint( args )
     headers = createHeaders(endpoint.get('hostname'))
