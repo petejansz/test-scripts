@@ -44,7 +44,6 @@ def load_map( filename ):
 
     return map
 
-
 def comparator(p, q):
     __DATETIME_FORMAT = '%Y-%m-%d,%H,%M'
     p = datetime.strptime(p, __DATETIME_FORMAT)
@@ -90,8 +89,6 @@ def merge_maps( map1, map2 ):
             count2 = map2[key]
             merged_results_map[key] = count2
 
-
-    # merged_results_map.keys().sort()
     return merged_results_map
 
 def main():
