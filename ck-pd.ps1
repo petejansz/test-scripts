@@ -94,7 +94,7 @@ function Check-PlayerDirect([string]$hostname, [string]$sessionToken, [string]$a
         pd-player-self -h $hostname -o $sessionToken --api $apinames
         $d2 = dateToLong (Get-date)
         $elapsedTime = $d2 - $d1
-        Write-Output "elapsed-time: ${elapsedTime} ms"
+        Write-Host "elapsed-time: ${elapsedTime} ms" -ForegroundColor "green"
     }
     else
     {
