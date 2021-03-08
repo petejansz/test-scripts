@@ -11,8 +11,14 @@ This Python 3 script demonstrates:
 Author: Pete Jansz, 2019
 """
 
-import argparse, json, requests, sys
+import argparse
+from casite import casite
 from datetime import datetime
+import json
+import requests
+import sys
+
+caSite = None
 
 def query(proto, host, port, query_str):
     apiPath = 'api/v2/draw-games/draws'
@@ -66,8 +72,10 @@ def createArgParser():
     parser = argparse.ArgumentParser(description='Check draw-games')
     parser.add_argument(
         '--proto', help='Protocol', default='https', choices=['http', 'https'], required=False, type=str)
+    parser.add_argument('--envname', help='Environment name',
+                        required=False, type=str, choices=caSite.gamesenvs())
     parser.add_argument(
-        '--host', help='Hostname or IP address', required=True, type=str)
+        '--host', help='Hostname or IP address', required=False, type=str, choices=caSite.gamesvhosts())
     parser.add_argument('--port', help='port', required=False, type=int)
     parser.add_argument('-q', '--qs', help='Query string',
         required=False, type=str)
@@ -76,8 +84,16 @@ def createArgParser():
 
 def main():
     exit_value = 1
+    global caSite
+    caSite = casite.CalifSite()
+    parser = createArgParser()
+    args = parser.parse_args()
 
-    args = createArgParser().parse_args()
+    if args.host == None and args.envname == None:
+        parser.print_help()
+        exit(exit_value)
+    if args.envname:
+        args.host = caSite.gamesvhost(args.envname)
 
     query(args.proto, args.host, args.port, args.qs)
 
