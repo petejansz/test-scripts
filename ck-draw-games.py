@@ -20,23 +20,31 @@ import sys
 
 caSite = None
 
-def query(proto, host, port, query_str):
+def query(args):
+    host, query_str = args.host, args.qs
     apiPath = 'api/v2/draw-games/draws'
-    params = {'exclude-prize-tiers': 'TRUE', 'game-names': 'KENO'}
+
+    # Default params
+    params = {'exclude-prize-tiers': 'TRUE', 'game-names': args.gamename}
 
     if query_str != None:
         for kv_pair in query_str.split('&'):
             key, value = kv_pair.split('=')
             params[key] = value
 
+    # Build query string from params:
     qs = ''
     for k, v in params.items(): qs += '&' + k + '=' + v
 
+    proto = 'https'
     uri = ''
-    if port == None:
+
+    if host.count('.com'):
         uri = "{}://{}/{}".format(proto, host, apiPath)
     else:
-        uri = "{}://{}:{}/{}".format('http', host, port, apiPath)
+        proto = 'http'
+        port = 8680
+        uri = "{}://{}:{}/{}".format(proto, host, port, apiPath)
 
     print( uri +  '?' + qs )
     headings = 'NAME      ID  STATUS       CLOSE_TIME        DRAW_TIME'
@@ -70,15 +78,14 @@ def convertToDatetime(longEpoch):
 
 def createArgParser():
     parser = argparse.ArgumentParser(description='Check draw-games')
-    parser.add_argument(
-        '--proto', help='Protocol', default='https', choices=['http', 'https'], required=False, type=str)
     parser.add_argument('--envname', help='Environment name',
                         required=False, type=str, choices=caSite.gamesenvs())
     parser.add_argument(
         '--host', help='Hostname or IP address', required=False, type=str, choices=caSite.gamesvhosts())
-    parser.add_argument('--port', help='port', required=False, type=int)
+    parser.add_argument('-g', '--gamename', help='Game name (default=KENO', default='KENO',
+                        required=False, type=str, choices=caSite.gameNames())
     parser.add_argument('-q', '--qs', help='Query string',
-        required=False, type=str)
+                        required=False, type=str)
 
     return parser
 
@@ -95,7 +102,7 @@ def main():
     if args.envname:
         args.host = caSite.gamesvhost(args.envname)
 
-    query(args.proto, args.host, args.port, args.qs)
+    query(args)
 
     exit_value = 0
 
