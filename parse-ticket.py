@@ -41,7 +41,7 @@ parser = OptionParser()
 def convertCdcToDateStr(cdc):
     year, month, day = CDC1.split('.')
     cdc1 = date( int(year), int(month), int(day) )
-    delta = timedelta( days=cdc )
+    delta = timedelta( days=cdc-1 )
     return ( str(cdc1 + delta) )
 
 def decode(webcode):
@@ -283,7 +283,7 @@ def main():
                 webcode = ticket
                 draw_ticket_count += 1
                 draw_ticket = decode(webcode)
-                tickets[draw_ticket.serialNumber] = draw_ticket
+                tickets[webcode] = draw_ticket
                 exit_value = 0
             else:
                 parser.print_help()
