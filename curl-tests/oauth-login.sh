@@ -3,8 +3,7 @@
 #   OAuth login to CA Player Direct, write oauth-token to stdout
 #   Pete Jansz, IGT, 2018-11-10
 
-EXECUTING_DIR=$( dirname $(readlink -f $0 ))
-. $EXECUTING_DIR/pd-ca-lib.sh
+. pd-ca-lib.sh
 
 SCRIPT=$(basename $0)
 HOST=

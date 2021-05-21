@@ -12,9 +12,7 @@
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal",
             "args": [
-                "--hostname", "cadev1", //, "--unsub_promo", "bFQvc0I4UTJPNm9GZExxZGRVbTcxTnB0bnd5V3l4MS9sSGNnZHY3YXFmUT0"
-                "-u", "mansir@mailinator.com",
-                "--api", "profile" //, "--update", "/tmp/pro.json"
+                "-t", "QRLZCMRFV&7P#" , "-t", "6J4ZB6CT8&RRV", "-t", "VMWFYFCY5PSNJ", "-t", "#6MZ#SR&BZGN#"
             ]
         },
         {
