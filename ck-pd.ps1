@@ -1,6 +1,6 @@
 param
 (
-    [string] $api='attributes',
+    [string] $api = 'attributes,communication-preferences,notifications-preferences,personal-info,profile',
     [int]    $count=1,
     [int] $oauthSessionLifeSec = 30,
     [int]    $wait = 0,
@@ -86,20 +86,25 @@ function validateEnvName()
 
 function Check-PlayerDirect([string]$hostname, [string]$sessionToken, [string]$apinames)
 {
-    Write-Host "Checking $hostname ..." -foregroundcolor "green"
+    Write-Host "Checking $hostname $apinames ..." -ForegroundColor "green"
+
+    $d1 = dateToLong (Get-Date)
 
     if ($verbose)
     {
-        $d1 = dateToLong (Get-date)
-        pd-player-self -h $hostname -o $sessionToken --api $apinames
-        $d2 = dateToLong (Get-date)
-        $elapsedTime = $d2 - $d1
-        Write-Host "elapsed-time: ${elapsedTime} ms" -ForegroundColor "green"
+        $object = py-player-self.py --hostname $hostname -o $sessionToken --api $apinames | ConvertFrom-Json
+        $count = $object.Length
+        Write-Host "Object count: $count"
     }
     else
     {
-        pd-player-self -h $hostname -o $sessionToken --api $apinames --quiet
+        py-player-self.py --hostname $hostname -o $sessionToken --api $apinames --quiet
     }
+
+    $d2 = dateToLong (Get-Date)
+    $elapsedTime = $d2 - $d1
+
+    Write-Host "elapsed-time: ${elapsedTime} ms" -ForegroundColor "green"
 }
 
 if ( $help ) { showHelp }
