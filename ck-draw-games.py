@@ -14,11 +14,22 @@ Author: Pete Jansz, 2019
 import argparse
 from casite import casite
 from datetime import datetime
+import os.path
 import json
 import requests
 import sys
 
 caSite = None
+
+def create_headers():
+    headers = {
+        'accept': '*/*',
+        'user-agent': os.path.basename(__file__),
+        'cache-control': 'no-cache',
+        'content-type': 'application/json'
+    }
+
+    return headers
 
 def query(args):
     host, query_str = args.host, args.qs
@@ -49,7 +60,7 @@ def query(args):
     print( uri +  '?' + qs )
     headings = 'NAME      ID  STATUS       CLOSE_TIME        DRAW_TIME'
     print_format = "{} {} {:>7} {:%Y-%m-%d-%H:%M} {:%Y-%m-%d-%H:%M}"
-    response = requests.get( uri, params )
+    response = requests.get(uri, params, headers=create_headers(), timeout=10000)
 
     if (response.ok):
         drawsDict = response.json()

@@ -9,6 +9,7 @@
 
 import httplib
 import json
+import os.path
 import ssl
 import string
 import sys
@@ -57,7 +58,7 @@ def get_drawgames_draws(conn, options):
 def check_esa_gateway_status(conn, options):
     headers = {
         'accept': '*/*',
-        'user-agent': 'python',
+        'user-agent': os.path.basename(__file__),
     }
 
     conn.request('GET', REST_PATHS['status'], headers=headers)
@@ -75,7 +76,7 @@ def create_headers(options):
 
     headers = {
         'accept': '*/*',
-        'user-agent': 'ck-check-a-ticket.py',
+        'user-agent': os.path.basename(__file__),
         'cache-control': 'no-cache',
         'content-type': 'application/json',
         'x-originator-id': channel + ',6,7,8',
