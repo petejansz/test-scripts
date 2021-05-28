@@ -141,7 +141,7 @@ function forgotten_password()
       -H "x-channel-id: $channelId"                     \
       -H 'content-type: application/json'               \
       -H "x-esa-api-key: ${ESA_API_KEY}"                \
-      --data-raw "{\"emailAddress\" : \"${FORGOTTEN_PASSWORD}\"}" )
+      -d "{\"emailAddress\" : \"${FORGOTTEN_PASSWORD}\"}" )
 
     echo $RESP
 }
