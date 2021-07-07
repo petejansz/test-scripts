@@ -1,6 +1,6 @@
 param
 (
-    [string] $api = 'attributes,communication-preferences,notifications-preferences,personal-info,profile',
+    [string] $api = 'attributes,communication-preferences,notifications-preferences,personal-info,profile,notifications',
     [int]    $count=1,
     [int] $oauthSessionLifeSec = 30,
     [int]    $wait = 0,
@@ -39,6 +39,13 @@ $apinames = @('attributes','communication-preferences','notifications','notifica
 $ScriptName = $MyInvocation.MyCommand.Name
 function showHelp()
 {
+    $formattedApinames = $apinames[0]
+    for($i = 1; $i -lt $apinames.Length; $i++)
+    {
+        $name = $apinames[$i]
+        $formattedApinames += ",{0}" -f $name
+    }
+
     $valid_names = $environments.Keys
     Write-Host "Check PD"
     Write-Host "USAGE: $ScriptName [options] <args>"
@@ -47,7 +54,7 @@ function showHelp()
     Write-Host "      -u <username>"
     Write-Host "      -p <password default=${p}>"
     Write-Host "  [options]"
-    Write-Host "    -api <name,... (default=attributes)>"
+    Write-Host "    -api <name,... (default=${formattedApinames})>"
     Write-Host "       api names: $apinames"
     Write-Host "    -count <number (default=1)> Repeat"
     Write-Host "    -oauthSessionLifeSec <seconds (default=${oauthSessionLifeSec})> When count > 1"
@@ -130,6 +137,7 @@ for ($i=1; $i -le $count; $i++)
         if ($verbose) { Write-Output "New oauthSessionToken: $oauthSessionToken" }
     }
 
+    $validated_apinames
     Check-PlayerDirect $environments[$envname] $oauthSessionToken $validated_apinames
 
     Start-Sleep -Seconds $wait
